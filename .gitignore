@@ -11,3 +11,4 @@ installer/src-tauri/target/
 installer/dist/
 *.log
 .env
+installer/src-tauri/gen/

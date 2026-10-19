@@ -1,0 +1,79 @@
+/* Fonts are the site's self-hosted woff2 files, bundled into the app by Vite. */
+@font-face {
+  font-family: "IBM Plex Sans Hebrew";
+  src: url("../../public/fonts/plex-sans-hebrew-regular.woff2") format("woff2");
+  font-weight: 400;
+}
+@font-face {
+  font-family: "IBM Plex Sans Hebrew";
+  src: url("../../public/fonts/plex-sans-hebrew-semibold.woff2") format("woff2");
+  font-weight: 600;
+}
+@font-face {
+  font-family: "IBM Plex Sans Hebrew";
+  src: url("../../public/fonts/plex-sans-hebrew-bold.woff2") format("woff2");
+  font-weight: 700;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 20px clamp(16px, 4vw, 40px) 24px;
+  min-height: 100vh;
+  font-family: var(--font);
+  line-height: 1.6;
+  color: var(--text);
+  background:
+    radial-gradient(700px 400px at 100% -10%, var(--bg-glow-1), transparent 70%),
+    radial-gradient(600px 400px at -10% 10%, var(--bg-glow-2), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+a {
+  color: var(--link);
+}
+
+.muted {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.app-header img {
+  border-radius: 12px;
+}
+.app-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.update-banner {
+  margin-bottom: 16px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--note-bg);
+  border: 1px solid var(--note-border);
+}
+
+#wizard {
+  max-width: 900px;
+}
+
+.app-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 24px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
