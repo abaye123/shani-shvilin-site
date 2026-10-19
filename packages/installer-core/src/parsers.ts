@@ -103,7 +103,8 @@ export function parseUsers(text: string): UserInfo[] {
 export function parseDfAvailable(text: string): number | null {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
   if (lines.length < 2) return null;
-  const header = lines[0].toLowerCase();
+  // "Mounted on" is one column; keep it from shifting the column count.
+  const header = lines[0].toLowerCase().replace("mounted on", "mounted_on");
   const kBlocks = header.includes("1k-blocks");
   const cols = header.split(/\s+/);
   let availIdx = cols.findIndex((c) => c === "available" || c === "avail" || c === "free");
