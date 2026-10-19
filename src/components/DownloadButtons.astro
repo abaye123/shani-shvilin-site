@@ -1,0 +1,52 @@
+---
+/**
+ * APK download buttons for one channel. Shows a friendly "no release yet" state while
+ * there is no published release.
+ */
+import { DOWNLOAD_CONSENT_LINE, apkPath, formatBytes, SUPPORTED_ABIS, type Channel } from "@shani/installer-core";
+import { apkAvailable, beta, stable } from "../lib/site-data";
+
+interface Props {
+  channel?: Channel;
+  big?: boolean;
+  /** Only show one ABI (used on /car after detection). */
+  abis?: readonly ("arm64-v8a" | "armeabi-v7a")[];
+}
+
+const { channel = "stable", big = false, abis = SUPPORTED_ABIS } = Astro.props;
+const rel = channel === "beta" ? beta : stable;
+const labels: Record<string, string> = {
+  "arm64-v8a": "64 ביט (arm64-v8a) - לרוב המכשירים החדשים",
+  "armeabi-v7a": "32 ביט (armeabi-v7a) - מתאים לכל מכשיר ARM",
+};
+const items = rel
+  ? abis
+      .filter((abi) => apkAvailable(channel, abi) || rel.info.apks[abi])
+      .map((abi) => ({ abi, href: apkPath(channel, abi), size: rel.info.apks[abi]?.size ?? 0 }))
+  : [];
+---
+
+{
+  rel && items.length ? (
+    <div class="dl">
+      <div class="btn-row">
+        {items.map((it) => (
+          <a class={`btn ${it.abi === "arm64-v8a" ? "btn-primary" : ""} ${big ? "btn-big" : ""}`} href={it.href} download data-abi={it.abi}>
+            הורדה: {labels[it.abi]}
+            {it.size ? <span class="small">({formatBytes(it.size)})</span> : null}
+          </a>
+        ))}
+      </div>
+      <p class="consent">
+        גרסה {rel.info.versionName}
+        {rel.channel === "beta" ? " (בטא)" : ""}. {DOWNLOAD_CONSENT_LINE} (<a href="/terms">תנאי השימוש</a>).
+      </p>
+    </div>
+  ) : (
+    <div class="note">
+      <p>
+        <strong>עדיין לא פורסמה גרסה להורדה.</strong> הגרסה הראשונה תופיע כאן בקרוב.
+      </p>
+    </div>
+  )
+}

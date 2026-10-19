@@ -1,0 +1,12 @@
+---
+/** A shell command with a copy button. The click handler lives in CopyScript.astro. */
+interface Props {
+  cmd: string;
+}
+const { cmd } = Astro.props;
+---
+
+<div class="sw-cmd" dir="ltr">
+  <code>{cmd}</code>
+  <button type="button" class="sw-copy" data-copy={cmd}>העתקה</button>
+</div>

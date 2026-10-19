@@ -1,0 +1,95 @@
+---
+import "../styles/global.css";
+import { Image } from "astro:assets";
+import icon from "../assets/icons/icon-app-round.png";
+import { COPYRIGHT_LINE } from "@shani/installer-core";
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Narrow reading column for text pages. */
+  narrow?: boolean;
+}
+
+const { title, description = "שני שבילין: מסך בית מסונן לטלפון ולרכב, חנות אפליקציות וסינון פנימי.", narrow = false } = Astro.props;
+const fullTitle = title === "שני שבילין" ? title : `${title} | שני שבילין`;
+const path = Astro.url.pathname.replace(/\/$/, "") || "/";
+const nav = [
+  { href: "/", label: "בית" },
+  { href: "/install", label: "התקנה" },
+  { href: "/guide", label: "מדריך" },
+  { href: "/help", label: "עזרה" },
+  { href: "/download", label: "הורדה" },
+];
+const isCurrent = (href: string) => (href === "/" ? path === "/" : path === href || path.startsWith(`${href}/`));
+---
+
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0a84ff" />
+    <link rel="icon" type="image/png" href="/icons/favicon-64.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="preload" href="/fonts/plex-sans-hebrew-regular.woff2" as="font" type="font/woff2" crossorigin />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="https://shanishvilin.abaye.co/icons/icon-192.png" />
+    <script is:inline>
+      try {
+        const t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">דילוג לתוכן</a>
+    <header class="site-header">
+      <div class="container">
+        <a class="brand" href="/">
+          <Image src={icon} alt="" width={36} height={36} loading="eager" />
+          <span>שני שבילין</span>
+        </a>
+        <nav class="site-nav" aria-label="ניווט ראשי">
+          {nav.map((n) => <a href={n.href} aria-current={isCurrent(n.href) ? "page" : undefined}>{n.label}</a>)}
+        </nav>
+        <button class="theme-toggle" type="button" id="theme-toggle" aria-label="החלפת מצב תצוגה בהיר או כהה" title="מצב בהיר או כהה">◐</button>
+      </div>
+    </header>
+    <main id="main" class={narrow ? "narrow" : "container"}>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="container">
+        <div>
+          <div>{COPYRIGHT_LINE}</div>
+          <div class="small">פותח על ידי <a href="https://abaye.co">abaye</a> · <a href="mailto:cs@abaye.co">cs@abaye.co</a></div>
+        </div>
+        <nav aria-label="קישורים">
+          <a href="/install">התקנה</a>
+          <a href="/devices">מכשירים</a>
+          <a href="/update-offline">עדכון בלי אינטרנט</a>
+          <a href="/changelog">מה חדש</a>
+          <a href="/terms">תנאי שימוש</a>
+        </nav>
+      </div>
+    </footer>
+    <script>
+      const btn = document.getElementById("theme-toggle");
+      btn?.addEventListener("click", () => {
+        const root = document.documentElement;
+        const dark = root.dataset.theme
+          ? root.dataset.theme === "dark"
+          : window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const next = dark ? "light" : "dark";
+        root.dataset.theme = next;
+        try {
+          localStorage.setItem("theme", next);
+        } catch {}
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,211 @@
+---
+import Base from "../../layouts/Base.astro";
+import PhoneArt from "../../components/PhoneArt.astro";
+import { DOWNLOAD_CONSENT_LINE, isSha256Hex } from "@shani/installer-core";
+import { stable } from "../../lib/site-data";
+
+const cert = stable?.info.certSha256;
+const qrReady = isSha256Hex(cert);
+---
+
+<Base title="התקנה בסריקת QR" description="התקנת שני שבילין במכשיר חדש או מאופס בסריקת קוד QR, בלי מחשב.">
+  <div class="page-head">
+    <h1>התקנה בסריקת QR</h1>
+    <p class="lead">למכשיר חדש או אחרי איפוס יצרן, עם אנדרואיד 7 ומעלה. בלי מחשב ובלי כבל, רק Wi-Fi.</p>
+  </div>
+
+  <div class="qr-layout">
+    <section class="card qr-card">
+      {
+        qrReady ? (
+          <>
+            <img src="/qr/device-owner.png" alt="קוד QR להתקנת שני שבילין" width="320" height="320" class="qr-img" id="qr-static" />
+            <canvas id="qr-wifi" class="qr-img" hidden />
+            <p class="consent">
+              גרסה {stable!.info.versionName}. {DOWNLOAD_CONSENT_LINE} (<a href="/terms">תנאי השימוש</a>).
+            </p>
+          </>
+        ) : (
+          <div class="note">
+            <p>
+              <strong>QR יהיה זמין עם הגרסה הראשונה.</strong>
+            </p>
+            <p>בינתיים אפשר להתקין בדרכים האחרות שבעמוד ההתקנה.</p>
+          </div>
+        )
+      }
+    </section>
+
+    <section class="card">
+      <h2>איך סורקים</h2>
+      <ol class="illustrated">
+        <li>
+          <PhoneArt variant="tap" />
+          <div>
+            <strong>מאפסים את המכשיר</strong> (או מתחילים ממכשיר חדש). במסך הפתיחה הראשון ("שלום" או "ברוכים הבאים") <strong>מקישים 6 פעמים</strong>
+            באותו מקום, על רקע ריק.
+          </div>
+        </li>
+        <li>
+          <PhoneArt variant="wifi" />
+          <div>אשף ההגדרה מבקש להתחבר ל-Wi-Fi ומוריד קורא QR. מתחברים לרשת.</div>
+        </li>
+        <li>
+          <PhoneArt variant="scan" />
+          <div>
+            <strong>סורקים את הקוד בקורא של אשף ההגדרה</strong>, ולא במצלמה הרגילה. מצלמה רגילה רק תפתח טקסט או דפדפן.
+          </div>
+        </li>
+        <li>
+          <PhoneArt variant="done" />
+          <div>המכשיר מוריד את שני שבילין ומגדיר אותה כמנהלת המכשיר. בסיום ממשיכים במכשיר: מסלול סינון וסיסמת הסרה.</div>
+        </li>
+      </ol>
+      <p class="muted small">
+        לא נפתח קורא QR אחרי 6 הקשות? בחלק מהמכשירים זה לא נתמך. משתמשים ב<a href="/install">דרך התקנה אחרת</a>.
+      </p>
+    </section>
+  </div>
+
+  {
+    qrReady && (
+      <section class="card wifi-form">
+        <h2>הוספת פרטי Wi-Fi לקוד (לא חובה)</h2>
+        <p class="muted">
+          כך המכשיר יתחבר לרשת לבד אחרי הסריקה. הקוד נוצר כאן בדפדפן, והסיסמה <strong>לא נשלחת לשום מקום</strong>.
+        </p>
+        <form id="wifi" data-cert={cert} autocomplete="off">
+          <label>
+            שם הרשת (SSID)
+            <input name="ssid" required dir="auto" />
+          </label>
+          <label>
+            סיסמה
+            <input name="password" type="password" dir="ltr" />
+          </label>
+          <label>
+            סוג אבטחה
+            <select name="security">
+              <option value="WPA">WPA / WPA2</option>
+              <option value="SAE">WPA3</option>
+              <option value="WEP">WEP</option>
+              <option value="NONE">ללא סיסמה</option>
+            </select>
+          </label>
+          <label class="inline">
+            <input type="checkbox" name="hidden" /> רשת מוסתרת
+          </label>
+          <div class="btn-row">
+            <button class="btn btn-primary" type="submit">יצירת קוד עם Wi-Fi</button>
+            <button class="btn" type="reset">חזרה לקוד הרגיל</button>
+          </div>
+        </form>
+      </section>
+    )
+  }
+</Base>
+
+<script>
+  import QRCode from "qrcode";
+  import { buildProvisioningPayload, type WifiExtras } from "@shani/installer-core";
+
+  const form = document.getElementById("wifi") as HTMLFormElement | null;
+  const canvas = document.getElementById("qr-wifi") as HTMLCanvasElement | null;
+  const img = document.getElementById("qr-static") as HTMLImageElement | null;
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const d = new FormData(form);
+    const wifi: WifiExtras = {
+      ssid: String(d.get("ssid") ?? ""),
+      password: String(d.get("password") ?? ""),
+      security: String(d.get("security") ?? "WPA") as WifiExtras["security"],
+      hidden: d.get("hidden") === "on",
+    };
+    const payload = JSON.stringify(buildProvisioningPayload(form.dataset.cert ?? "", wifi));
+    if (!canvas) return;
+    await QRCode.toCanvas(canvas, payload, { errorCorrectionLevel: "M", margin: 2, width: 320 });
+    canvas.hidden = false;
+    if (img) img.hidden = true;
+    canvas.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+  form?.addEventListener("reset", () => {
+    if (canvas) canvas.hidden = true;
+    if (img) img.hidden = false;
+  });
+</script>
+
+<style>
+  .qr-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 360px) 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+  .qr-layout > .card + .card {
+    margin-top: 0;
+  }
+  .qr-card {
+    text-align: center;
+    position: sticky;
+    top: 90px;
+  }
+  .qr-img {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    background: #fff;
+    border-radius: 16px;
+    padding: 6px;
+  }
+  .illustrated {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 18px;
+  }
+  .illustrated li {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+  }
+  .wifi-form {
+    margin-top: 18px;
+    max-width: 640px;
+  }
+  form {
+    display: grid;
+    gap: 12px;
+  }
+  form label {
+    display: grid;
+    gap: 4px;
+    font-weight: 600;
+  }
+  form label.inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  input:not([type="checkbox"]),
+  select {
+    font: inherit;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-strong);
+    color: var(--text);
+  }
+  @media (max-width: 760px) {
+    .qr-layout {
+      grid-template-columns: 1fr;
+    }
+    .qr-card {
+      position: static;
+    }
+    .illustrated li {
+      align-items: flex-start;
+    }
+  }
+</style>

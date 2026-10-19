@@ -1,0 +1,116 @@
+---
+import Base from "../layouts/Base.astro";
+import Gallery from "../components/Gallery.astro";
+import { Image } from "astro:assets";
+import icon from "../assets/icons/icon-app.png";
+import { stable } from "../lib/site-data";
+
+const features = [
+  { t: "מסך בית לטלפון ולרכב", d: "שעה, תאריך עברי ולועזי, הזמן הקרוב, מזג אוויר, מד מהירות, אריחי ניווט ומוזיקה ופקדי מדיה. גדול, ברור ונוח גם במולטימדיה של הרכב." },
+  { t: "חנות אפליקציות מסוננת", d: "קטלוג של אפליקציות שנבדקו, עם עדכונים. כל קובץ נבדק מול החתימה שבקטלוג לפני ההתקנה." },
+  { t: "סינון פנימי", d: "כל התעבורה עוברת דרך הסינון הפנימי. מסלולים מ\"ללא אינטרנט\" ועד \"פתוח\", לפי מה שמתאים לכם." },
+  { t: "זמנים ותפילת הדרך", d: "זמני היום לפי המיקום, תפילת הדרך עם השמעה מודרכת ותזכורת בנסיעה, וקיצור הלכות." },
+  { t: "הגנה מפני הסרה", d: "האפליקציה מנהלת את המכשיר. שינוי הגדרות והסרה דורשים סיסמה, ואיפוס יצרן ומצב בטוח חסומים." },
+  { t: "פרטיות", d: "לא נאספים שם, חשבון או מיקום. נשלח רק מה שנדרש לסנכרון הקטלוג ולבדיקת עדכונים." },
+];
+---
+
+<Base title="שני שבילין">
+  <section class="hero">
+    <div class="hero-text">
+      <span class="badge">{stable ? `גרסה ${stable.info.versionName}` : "בקרוב"}</span>
+      <h1>שני שבילין</h1>
+      <p class="lead">מסך בית מסונן לטלפון ולמולטימדיה של הרכב, עם חנות אפליקציות וסינון פנימי. פשוט, נקי ושקט.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary btn-big" href="/install">להתקנה</a>
+        <a class="btn" href="/guide">איך זה עובד</a>
+      </div>
+      <p class="muted small">לאנדרואיד 7 ומעלה. ההתקנה מגדירה את האפליקציה כמנהלת המכשיר, ולכן היא נעשית על מכשיר בלי חשבונות.</p>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <Image src={icon} alt="" width={260} height={260} loading="eager" />
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>מה יש בפנים</h2>
+    <div class="grid">
+      {
+        features.map((f) => (
+          <div class="card">
+            <h3>{f.t}</h3>
+            <p class="muted">{f.d}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>צילומי מסך</h2>
+    <Gallery />
+  </section>
+
+  <section class="section card cta">
+    <div>
+      <h2>מוכנים להתחיל?</h2>
+      <p class="muted">אשף ההתקנה בודק את המכשיר, מסביר כל תקלה ומתקין בלחיצה. יש התקנה מהדפדפן, תוכנה למחשב, התקנה בסריקת QR והתקנה ישירות ביחידת הרכב.</p>
+    </div>
+    <a class="btn btn-primary btn-big" href="/install">להתקנה</a>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 32px;
+    align-items: center;
+    padding-block: 24px 40px;
+  }
+  .hero-art {
+    display: grid;
+    place-items: center;
+  }
+  .hero-art img {
+    width: min(260px, 60vw);
+    height: auto;
+    border-radius: 56px;
+    box-shadow: 0 30px 60px rgba(10, 132, 255, 0.25);
+    transform: rotate(-4deg);
+  }
+  .hero h1 {
+    font-size: clamp(2.4rem, 7vw, 3.8rem);
+    background: var(--brand-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-top: 10px;
+  }
+  .section {
+    margin-top: 48px;
+  }
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .cta p {
+    max-width: 60ch;
+    margin-bottom: 0;
+  }
+  @media (max-width: 760px) {
+    .hero {
+      grid-template-columns: 1fr;
+    }
+    .hero-art {
+      order: -1;
+    }
+    .hero-art img {
+      width: 140px;
+      border-radius: 32px;
+    }
+  }
+</style>

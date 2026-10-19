@@ -1,0 +1,68 @@
+---
+import Base from "../../layouts/Base.astro";
+import CopyCmd from "../../components/CopyCmd.astro";
+import CopyScript from "../../components/CopyScript.astro";
+import DownloadButtons from "../../components/DownloadButtons.astro";
+import { ADMIN_COMPONENT, APP_PACKAGE, MAIN_ACTIVITY } from "@shani/installer-core";
+---
+
+<Base title="התקנה ידנית" description="התקנת שני שבילין בפקודות adb." narrow>
+  <div class="page-head">
+    <h1>התקנה ידנית בפקודות adb</h1>
+    <p class="lead">למי שמכיר את adb. אם לא, עדיף <a href="/install/pc">תוכנת ההתקנה</a> או <a href="/install/web">ההתקנה מהדפדפן</a>.</p>
+  </div>
+
+  <div class="stack">
+    <section class="card">
+      <h2>1. מה צריך</h2>
+      <ul>
+        <li>
+          platform-tools הרשמי של גוגל:
+          <a href="https://dl.google.com/android/repository/platform-tools-latest-windows.zip">Windows</a>,
+          <a href="https://dl.google.com/android/repository/platform-tools-latest-darwin.zip">Mac</a>,
+          <a href="https://dl.google.com/android/repository/platform-tools-latest-linux.zip">Linux</a>.
+        </li>
+        <li>קובץ ההתקנה:</li>
+      </ul>
+      <DownloadButtons />
+      <p>מכשיר בלי חשבונות ובלי משתמשים נוספים, עם ניפוי באגים ב-USB מופעל (ראו <a href="/devices">הערות למכשירים</a>).</p>
+    </section>
+
+    <section class="card">
+      <h2>2. בדיקות</h2>
+      <p>המכשיר מחובר ומאושר (צריך להופיע עם המילה device):</p>
+      <CopyCmd cmd="adb devices" />
+      <p>סוג המעבד (arm64-v8a או armeabi-v7a), כדי לבחור קובץ:</p>
+      <CopyCmd cmd="adb shell getprop ro.product.cpu.abilist" />
+      <p>אין חשבונות (הרשימה צריכה להיות ריקה):</p>
+      <CopyCmd cmd="adb shell dumpsys account | grep -i 'Account {'" />
+      <p>יש משתמש אחד בלבד:</p>
+      <CopyCmd cmd="adb shell pm list-users" />
+      <p>אין מנהל מכשיר אחר:</p>
+      <CopyCmd cmd="adb shell dpm list-owners" />
+    </section>
+
+    <section class="card">
+      <h2>3. התקנה</h2>
+      <p>מחליפים את שם הקובץ לשם הקובץ שהורד:</p>
+      <CopyCmd cmd="adb install -r ShaniShvilin-arm64-v8a.apk" />
+      <p>הגדרה כמנהלת המכשיר:</p>
+      <CopyCmd cmd={`adb shell dpm set-device-owner ${ADMIN_COMPONENT}`} />
+      <p>פתיחת האפליקציה להמשך ההגדרה במכשיר:</p>
+      <CopyCmd cmd={`adb shell am start -n ${MAIN_ACTIVITY}`} />
+    </section>
+
+    <section class="card">
+      <h2>עדכון</h2>
+      <p>כשהאפליקציה כבר מנהלת את המכשיר מעדכנים בלבד. לא מסירים ולא מריצים שוב את dpm:</p>
+      <CopyCmd cmd="adb install -r ShaniShvilin-arm64-v8a.apk" />
+    </section>
+
+    <section class="card">
+      <h2>אם משהו נכשל</h2>
+      <p>מעתיקים את הודעת השגיאה ומחפשים אותה ב<a href="/help">עמוד העזרה</a>. הסרה של התקנה חלקית (לפני שהוגדר מנהל מכשיר):</p>
+      <CopyCmd cmd={`adb uninstall ${APP_PACKAGE}`} />
+    </section>
+  </div>
+  <CopyScript />
+</Base>

@@ -1,0 +1,8 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "src/**/*"],
+  "exclude": ["dist", "installer", "packages"],
+  "compilerOptions": {
+    "types": ["w3c-web-usb"]
+  }
+}

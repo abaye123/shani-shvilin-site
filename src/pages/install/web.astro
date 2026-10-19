@@ -1,0 +1,69 @@
+---
+import Base from "../../layouts/Base.astro";
+import { hasRelease } from "../../lib/site-data";
+---
+
+<Base title="התקנה מהדפדפן" description="התקנת שני שבילין ישירות מהדפדפן במחשב, דרך כבל USB.">
+  <div class="page-head">
+    <h1>התקנה מהדפדפן</h1>
+    <p class="lead">מחברים את המכשיר למחשב בכבל, והאשף בודק, מתקין ומגדיר. עובד ב-Google Chrome וב-Microsoft Edge במחשב.</p>
+  </div>
+
+  {
+    !hasRelease && (
+      <div class="note" style="margin-bottom:18px">
+        <p>
+          <strong>עדיין לא פורסמה גרסה.</strong> אפשר להתחיל את האשף, אבל בשלב "קובץ ההתקנה" יידרש קובץ שהורד מראש.
+        </p>
+      </div>
+    )
+  }
+
+  <div id="wizard" class="wizard-root">
+    <div class="card">
+      <p>טוען את אשף ההתקנה...</p>
+      <noscript><p>כדי להשתמש באשף יש להפעיל JavaScript בדפדפן.</p></noscript>
+    </div>
+  </div>
+
+  <details class="faq tips">
+    <summary>טיפים לחיבור במחשב Windows</summary>
+    <ul>
+      <li>
+        אם המכשיר לא מופיע ברשימה: מחליפים לכבל נתונים, ובמכשיר בוחרים בהתראת ה-USB "העברת קבצים". בחלק מהמכשירים (בעיקר סמסונג) הדפדפן לא
+        יכול לגשת למכשיר, ואז עדיף את <a href="/install/pc">תוכנת ההתקנה למחשב</a>.
+      </li>
+      <li>
+        אם מופיעה הודעה שחיבור ה-USB תפוס: סוגרים את תוכנת ההתקנה למחשב, Android Studio או scrcpy, או מריצים <code>adb kill-server</code>.
+      </li>
+      <li>בעיה אחרת? <a href="/help">פתרון בעיות</a>.</li>
+    </ul>
+  </details>
+</Base>
+
+<script>
+  import { mountWizard, browserFetcher } from "@shani/installer-core";
+  import { WebUsbBackend } from "@shani/installer-core/webusb";
+
+  const root = document.getElementById("wizard");
+  if (root) {
+    mountWizard({
+      root,
+      backend: new WebUsbBackend(),
+      fetcher: browserFetcher,
+      dataBase: "",
+      linkBase: "",
+      platform: "web",
+    });
+  }
+</script>
+
+<style>
+  .wizard-root {
+    max-width: 860px;
+  }
+  .tips {
+    margin-top: 24px;
+    max-width: 860px;
+  }
+</style>

@@ -1,0 +1,35 @@
+---
+import Base from "../layouts/Base.astro";
+import { COPYRIGHT_LINE, TERMS, TERMS_TITLE, TERMS_VERSION } from "@shani/installer-core";
+---
+
+<Base title="תנאי שימוש" description="תנאי השימוש בשני שבילין." narrow>
+  <article class="card">
+    <h1>{TERMS_TITLE}</h1>
+    <p class="muted small">גרסה {TERMS_VERSION}</p>
+    <ol class="terms">
+      {
+        TERMS.map((t) => (
+          <li>
+            <h2>{t.title}</h2>
+            <p>{t.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <p><strong>{COPYRIGHT_LINE}</strong></p>
+  </article>
+</Base>
+
+<style>
+  .terms {
+    padding-inline-start: 1.4em;
+  }
+  .terms h2 {
+    font-size: 1.1rem;
+    margin: 18px 0 4px;
+  }
+  .terms p {
+    margin: 0;
+  }
+</style>

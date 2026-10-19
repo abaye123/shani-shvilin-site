@@ -1,0 +1,93 @@
+---
+import Base from "../../layouts/Base.astro";
+import { DOWNLOAD_CONSENT_LINE, formatBytes } from "@shani/installer-core";
+import { installerAvailable, versionFile } from "../../lib/site-data";
+
+const inst = versionFile.installer;
+const available = installerAvailable() && inst;
+---
+
+<Base title="תוכנת התקנה למחשב" description="תוכנת ההתקנה של שני שבילין למחשב Windows: מורידים, מחברים את המכשיר ומתקינים.">
+  <div class="page-head">
+    <h1>תוכנת התקנה למחשב</h1>
+    <p class="lead">קובץ אחד, בלי התקנה: מורידים, פותחים, מחברים את המכשיר בכבל ומתקדמים באשף. אותו אשף כמו בהתקנה מהדפדפן.</p>
+  </div>
+
+  <section class="card">
+    <h2>הורדה</h2>
+    {
+      available ? (
+        <div>
+          <div class="btn-row">
+            <a class="btn btn-primary btn-big" href={inst.path} download>
+              הורדה ל-Windows
+            </a>
+          </div>
+          <p class="consent">
+            גרסה {inst.version}
+            {inst.size ? `, ${formatBytes(inst.size)}` : ""}. Windows 10 או 11, 64 ביט. {DOWNLOAD_CONSENT_LINE} (<a href="/terms">תנאי השימוש</a>).
+          </p>
+          {inst.sha256 && (
+            <p class="small muted">
+              SHA-256: <span class="mono ltr">{inst.sha256}</span>
+            </p>
+          )}
+        </div>
+      ) : (
+        <div class="note">
+          <p>
+            <strong>תוכנת ההתקנה למחשב תהיה זמינה כאן בקרוב.</strong> בינתיים אפשר להתקין <a href="/install/web">מהדפדפן</a> (Chrome או Edge).
+          </p>
+        </div>
+      )
+    }
+  </section>
+
+  <section class="card">
+    <h2>אזהרת Windows בפתיחה הראשונה</h2>
+    <p>
+      התוכנה אינה חתומה בחתימת קוד בתשלום, ולכן בפתיחה הראשונה Windows עשוי להציג חלון כחול: "Windows protected your PC" (Windows הגן על המחשב
+      שלך). זה צפוי. כדי להמשיך:
+    </p>
+    <ol class="steps">
+      <li>לוחצים על <strong>"מידע נוסף"</strong> (More info) שמתחת לטקסט.</li>
+      <li>מוודאים שכתוב "ShaniShvilin-Installer" בשם הקובץ.</li>
+      <li>לוחצים <strong>"הפעל בכל זאת"</strong> (Run anyway).</li>
+    </ol>
+    <p class="muted small">
+      אם הדפדפן חוסם את ההורדה עצמה, לוחצים על שלוש הנקודות ליד ההורדה ובוחרים "שמור" או "שמור בכל זאת". מורידים רק מהאתר הזה.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>מה קורה בפתיחה הראשונה</h2>
+    <ul>
+      <li>
+        התוכנה מורידה מגוגל את כלי החיבור הרשמי (platform-tools, כ-10 MB) ושומרת אותו במחשב. בפעמים הבאות לא צריך להוריד שוב.
+      </li>
+      <li>
+        אם ההורדה מגוגל חסומה בסינון: מורידים את platform-tools ממחשב אחר, ומעתיקים את הקבצים <code>adb.exe</code>, <code>AdbWinApi.dll</code> ו-
+        <code>AdbWinUsbApi.dll</code> לאותה תיקייה שבה נמצאת תוכנת ההתקנה.
+      </li>
+      <li>כשהתוכנה פתוחה היא מחזיקה את חיבור ה-USB. כדי להתקין מהדפדפן, סוגרים אותה קודם.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>עדכון בלי אינטרנט</h2>
+    <p>
+      התוכנה יכולה לעדכן מכשיר גם כשאין אינטרנט במחשב: בשלב "קובץ ההתקנה" בוחרים "בחירת קובץ מהמחשב" ובוחרים קובץ APK שהורד מראש מ<a
+        href="/download">עמוד ההורדות</a
+      >. ראו גם <a href="/update-offline">עדכון מכשיר בלי אינטרנט</a>.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>המחשב לא מזהה את המכשיר?</h2>
+    <ul>
+      <li>מוודאים ש"ניפוי באגים ב-USB" מופעל ושהכבל מעביר נתונים (לא רק טעינה).</li>
+      <li>בחלק מהמכשירים (בעיקר סמסונג) צריך להתקין את מנהל ההתקן (driver) של היצרן.</li>
+      <li>עוד פתרונות ב<a href="/help">עמוד העזרה</a>.</li>
+    </ul>
+  </section>
+</Base>

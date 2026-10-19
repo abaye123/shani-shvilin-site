@@ -1,0 +1,141 @@
+---
+import Base from "../layouts/Base.astro";
+import { DOWNLOAD_CONSENT_LINE, apkPath, formatBytes } from "@shani/installer-core";
+import { stable } from "../lib/site-data";
+
+const rel = stable;
+const v7 = rel ? { href: apkPath("stable", "armeabi-v7a"), size: rel.info.apks["armeabi-v7a"]?.size ?? 0 } : null;
+const v8 = rel ? { href: apkPath("stable", "arm64-v8a"), size: rel.info.apks["arm64-v8a"]?.size ?? 0 } : null;
+---
+
+<Base title="התקנה ביחידת הרכב" description="התקנת שני שבילין ישירות ביחידת המולטימדיה של הרכב.">
+  <div class="car">
+    <h1>התקנה ביחידת הרכב</h1>
+    <p class="lead">העמוד הזה מיועד לפתיחה בדפדפן של יחידת המולטימדיה עצמה.</p>
+
+    <section class="card big-step">
+      <span class="num">1</span>
+      <div>
+        <h2>מורידים את הקובץ</h2>
+        {
+          rel && v7 && v8 ? (
+            <>
+              <div class="car-buttons">
+                <a class="btn btn-primary car-btn" id="btn-v7" href={v7.href} download>
+                  הורדה למולטימדיה
+                  <span class="small">מתאים לכל יחידה{v7.size ? ` (${formatBytes(v7.size)})` : ""}</span>
+                </a>
+                <a class="btn car-btn" id="btn-v8" href={v8.href} download>
+                  הורדה ליחידה 64 ביט
+                  <span class="small">מהיר יותר ביחידות חדשות{v8.size ? ` (${formatBytes(v8.size)})` : ""}</span>
+                </a>
+              </div>
+              <p id="abi-hint" class="muted" hidden />
+              <p class="consent">
+                גרסה {rel.info.versionName}. {DOWNLOAD_CONSENT_LINE} (<a href="/terms">תנאי השימוש</a>).
+              </p>
+            </>
+          ) : (
+            <div class="note">
+              <p>
+                <strong>עדיין לא פורסמה גרסה להורדה.</strong> חזרו לעמוד הזה בקרוב.
+              </p>
+            </div>
+          )
+        }
+      </div>
+    </section>
+
+    <section class="card big-step">
+      <span class="num">2</span>
+      <div>
+        <h2>מתקינים</h2>
+        <p>פותחים את הקובץ שהורד (בהתראת ההורדה או בתיקיית "הורדות"). אם היחידה שואלת, מאשרים "התקנה ממקורות לא ידועים" לדפדפן או למנהל הקבצים.</p>
+      </div>
+    </section>
+
+    <section class="card big-step">
+      <span class="num">3</span>
+      <div>
+        <h2>ממשיכים באשף "בלי מחשב"</h2>
+        <p>
+          פותחים את שני שבילין. בשלב "הרשאת ניהול המכשיר" בוחרים <strong>"בלי מחשב"</strong> ופועלים לפי ההוראות: מפעילים אפשרויות מפתחים, מפעילים
+          "ניפוי באגים אלחוטי" ומצמידים בקוד של 6 ספרות. דורש אנדרואיד 11 ומעלה וחיבור Wi-Fi.
+        </p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>סיסמה לאפשרויות המפתחים</h2>
+      <p>
+        בחלק מהיחידות הכניסה לאפשרויות המפתחים או להגדרות היצרן דורשת סיסמה. למשל ב-<strong>TS10S</strong>: <strong>7890</strong> ואחריה
+        <strong>השעה הנוכחית בשתי ספרות</strong>. בשעה 14:20 מקלידים <span class="mono ltr">789014</span>, ובשעה 9:05 מקלידים
+        <span class="mono ltr">789009</span>.
+      </p>
+      <p class="muted">ביחידות אחרות נפוצות הסיסמאות 8888, 1234, 0000, 3368 או 1617. אם אף אחת לא עובדת, בודקים במדריך של היחידה.</p>
+    </section>
+
+    <section class="card">
+      <h2>היחידה עם אנדרואיד 10 או ישן יותר?</h2>
+      <p>האשף "בלי מחשב" דורש אנדרואיד 11. ביחידות ישנות יותר צריך חיבור למחשב, אם היחידה תומכת בו: <a href="/install">דרכי ההתקנה</a>.</p>
+    </section>
+  </div>
+</Base>
+
+<script>
+  // Best-effort hint for 64 bit units. armeabi-v7a works on every ARM unit, so it stays the default.
+  const hint = document.getElementById("abi-hint");
+  const uaData = (navigator as Navigator & { userAgentData?: { getHighEntropyValues?: (h: string[]) => Promise<{ bitness?: string }> } }).userAgentData;
+  const ua = navigator.userAgent;
+  const show64 = () => {
+    document.getElementById("btn-v8")?.classList.add("btn-primary");
+    document.getElementById("btn-v7")?.classList.remove("btn-primary");
+    if (hint) {
+      hint.hidden = false;
+      hint.textContent = "נראה שזו יחידה של 64 ביט, ולכן סימנו את הקובץ המתאים. גם הכפתור הראשון יעבוד.";
+    }
+  };
+  if (/aarch64|arm64/i.test(ua)) show64();
+  else
+    uaData
+      ?.getHighEntropyValues?.(["bitness"])
+      .then((v) => v.bitness === "64" && show64())
+      .catch(() => undefined);
+</script>
+
+<style>
+  .car {
+    font-size: 1.2rem;
+  }
+  .big-step {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  .num {
+    flex: none;
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--brand-gradient);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.6rem;
+  }
+  .big-step h2 {
+    margin-top: 8px;
+  }
+  .car-buttons {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+  .car-btn {
+    flex-direction: column;
+    font-size: 1.35rem;
+    padding: 22px 26px;
+    border-radius: 22px;
+  }
+</style>

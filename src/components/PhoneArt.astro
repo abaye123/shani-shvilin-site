@@ -1,0 +1,57 @@
+---
+/** Small inline illustrations for the setup steps. Decorative only. */
+interface Props {
+  variant: "tap" | "scan" | "wifi" | "done";
+}
+const { variant } = Astro.props;
+---
+
+<svg class="phone-art" viewBox="0 0 120 200" width="96" height="160" aria-hidden="true" focusable="false">
+  <rect x="8" y="4" width="104" height="192" rx="18" fill="var(--surface-strong)" stroke="currentColor" stroke-opacity="0.35" stroke-width="3"></rect>
+  <rect x="44" y="12" width="32" height="5" rx="2.5" fill="currentColor" fill-opacity="0.25"></rect>
+  {
+    variant === "tap" && (
+      <g>
+        <text x="60" y="70" text-anchor="middle" font-size="16" font-weight="700" fill="currentColor">שלום</text>
+        <rect x="30" y="150" width="60" height="18" rx="9" fill="#0a84ff" />
+        <circle cx="60" cy="110" r="10" fill="#ffe066" />
+        <circle cx="60" cy="110" r="18" fill="none" stroke="#ffe066" stroke-width="3" opacity="0.7" />
+        <circle cx="60" cy="110" r="26" fill="none" stroke="#ffe066" stroke-width="2" opacity="0.4" />
+        <text x="60" y="115" text-anchor="middle" font-size="12" font-weight="700" fill="#3d3000">×6</text>
+      </g>
+    )
+  }
+  {
+    variant === "scan" && (
+      <g stroke="#00c9a7" stroke-width="5" fill="none" stroke-linecap="round">
+        <path d="M30 70 v-16 h16 M74 54 h16 v16 M90 126 v16 h-16 M46 142 h-16 v-16" />
+        <rect x="44" y="76" width="32" height="44" rx="3" stroke="currentColor" stroke-opacity="0.3" stroke-width="3" />
+        <line x1="34" y1="98" x2="86" y2="98" stroke="#0a84ff" stroke-width="3" />
+      </g>
+    )
+  }
+  {
+    variant === "wifi" && (
+      <g fill="none" stroke="#0a84ff" stroke-width="6" stroke-linecap="round">
+        <path d="M30 92 a44 44 0 0 1 60 0" />
+        <path d="M42 106 a26 26 0 0 1 36 0" />
+        <circle cx="60" cy="120" r="5" fill="#0a84ff" stroke="none" />
+      </g>
+    )
+  }
+  {
+    variant === "done" && (
+      <g>
+        <circle cx="60" cy="100" r="30" fill="#00c9a7" />
+        <path d="M46 100 l10 10 l20 -22" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      </g>
+    )
+  }
+</svg>
+
+<style>
+  .phone-art {
+    color: var(--text);
+    flex: none;
+  }
+</style>

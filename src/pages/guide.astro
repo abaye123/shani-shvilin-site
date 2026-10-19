@@ -1,0 +1,47 @@
+---
+import Base from "../layouts/Base.astro";
+import help from "../data/help-content.json";
+
+// Generated from the app's HelpContent.kt by scripts/sync-help.mjs, so the site and the
+// in-app help say the same thing.
+const sections = help as { title: string; topics: { title: string; body: string }[] }[];
+const slug = (i: number) => `s${i + 1}`;
+---
+
+<Base title="מדריך שימוש" description="מדריך השימוש בשני שבילין: מסך הבית, זמני היום, תפילת הדרך, החנות, ההגדרות והסינון." narrow>
+  <div class="page-head">
+    <h1>מדריך שימוש</h1>
+    <p class="lead">אותו מדריך שנמצא באפליקציה, בתפריט מסך הבית > "עזרה".</p>
+  </div>
+
+  <nav class="toc" aria-label="נושאים">
+    {sections.map((s, i) => <a href={`#${slug(i)}`}>{s.title}</a>)}
+  </nav>
+
+  <div class="stack">
+    {
+      sections.map((s, i) => (
+        <section class="card" id={slug(i)}>
+          <h2>{s.title}</h2>
+          {s.topics.map((t) => (
+            <details class="faq">
+              <summary>{t.title}</summary>
+              {t.body.split("\n").map((line) => (
+                <p>{line}</p>
+              ))}
+            </details>
+          ))}
+        </section>
+      ))
+    }
+  </div>
+</Base>
+
+<style>
+  section {
+    scroll-margin-top: 90px;
+  }
+  details p {
+    margin: 6px 0;
+  }
+</style>

@@ -1,0 +1,55 @@
+---
+import Base from "../layouts/Base.astro";
+import { GENERIC_PREPARE, OEM_NOTES } from "@shani/installer-core";
+---
+
+<Base title="הערות למכשירים" description="הכנת המכשיר להתקנת שני שבילין לפי יצרן: סמסונג, שיאומי, פיקסל ויחידות רכב." narrow>
+  <div class="page-head">
+    <h1>הערות למכשירים</h1>
+    <p class="lead">מה צריך להכין לפני ההתקנה, ומה שונה אצל כל יצרן.</p>
+  </div>
+
+  <nav class="toc" aria-label="יצרנים">
+    <a href="#general">כל המכשירים</a>
+    {OEM_NOTES.map((o) => <a href={`#${o.id}`}>{o.name}</a>)}
+  </nav>
+
+  <div class="stack">
+    <section class="card" id="general">
+      <h2>כל המכשירים</h2>
+      <ol class="steps">{GENERIC_PREPARE.map((s) => <li>{s}</li>)}</ol>
+    </section>
+    {
+      OEM_NOTES.map((o) => (
+        <section class="card" id={o.id}>
+          <h2>{o.name}</h2>
+          <p class="muted">{o.summary}</p>
+          <ul>
+            {o.steps.map((s) => (
+              <li>{s}</li>
+            ))}
+          </ul>
+          {o.warnings?.map((w) => (
+            <div class="note">
+              <p>{w}</p>
+            </div>
+          ))}
+          {o.id === "car" && (
+            <p>
+              לעמוד ההתקנה ביחידה: <a href="/car">shanishvilin.abaye.co/car</a>
+            </p>
+          )}
+        </section>
+      ))
+    }
+  </div>
+</Base>
+
+<style>
+  section {
+    scroll-margin-top: 90px;
+  }
+  li + li {
+    margin-top: 6px;
+  }
+</style>

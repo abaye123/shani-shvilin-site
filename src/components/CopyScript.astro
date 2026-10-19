@@ -1,0 +1,26 @@
+---
+/** Wires every [data-copy] button on the page. Include once per page that uses CopyCmd. */
+---
+
+<script>
+  document.addEventListener("click", async (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-copy]");
+    if (!btn) return;
+    const text = btn.dataset.copy ?? "";
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    const old = btn.textContent;
+    btn.textContent = "הועתק";
+    setTimeout(() => (btn.textContent = old), 1500);
+  });
+</script>

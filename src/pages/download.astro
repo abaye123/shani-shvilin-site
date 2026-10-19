@@ -1,0 +1,96 @@
+---
+import Base from "../layouts/Base.astro";
+import DownloadButtons from "../components/DownloadButtons.astro";
+import { SUPPORTED_ABIS, apkPath, fingerprint, formatBytes, isSha256Hex, type ChannelInfo, type Channel } from "@shani/installer-core";
+import { beta, formatDate, stable } from "../lib/site-data";
+
+const RELEASES_URL = "https://github.com/abaye123/shani-shvilin-releases/releases";
+const channels: { label: string; channel: Channel; info: ChannelInfo }[] = [];
+if (stable) channels.push({ label: stable.channel === "beta" ? "גרסה נוכחית (בטא)" : "גרסה יציבה", channel: "stable", info: stable.info });
+if (beta && beta.info.tag !== stable?.info.tag) channels.push({ label: "גרסת בטא", channel: "beta", info: beta.info });
+---
+
+<Base title="הורדה" description="הורדת הגרסה האחרונה של שני שבילין, עם גודל, SHA-256 וטביעת אצבע של החתימה." narrow>
+  <div class="page-head">
+    <h1>הורדה</h1>
+    <p class="lead">
+      להתקנה מלאה (עם הגדרת מנהל המכשיר) עדיף <a href="/install">אשף ההתקנה</a>. הקבצים כאן מיועדים להתקנה ידנית, לעדכון בלי אינטרנט ולהתקנה
+      ביחידת הרכב.
+    </p>
+  </div>
+
+  {
+    channels.length === 0 ? (
+      <div class="card">
+        <DownloadButtons />
+      </div>
+    ) : (
+      <div class="stack">
+        {channels.map(({ label, channel, info }) => (
+          <section class="card">
+            <h2>
+              {label}: {info.versionName}
+            </h2>
+            <p class="muted">
+              פורסמה {formatDate(info.publishedAt)}. <a href="/changelog">מה חדש</a>
+            </p>
+            <DownloadButtons channel={channel} />
+            <dl class="kv">
+              {SUPPORTED_ABIS.map((abi) => {
+                const a = info.apks[abi];
+                return a ? (
+                  <>
+                    <dt>{abi}</dt>
+                    <dd>
+                      <a href={apkPath(channel, abi)}>{`ShaniShvilin-${abi}.apk`}</a> ({formatBytes(a.size)})
+                      <br />
+                      <span class="mono ltr">SHA-256: {a.sha256}</span>
+                    </dd>
+                  </>
+                ) : null;
+              })}
+              {info.universalUrl && (
+                <>
+                  <dt>אוניברסלי</dt>
+                  <dd>
+                    <a href={info.universalUrl}>קובץ אוניברסלי לכל סוגי המעבדים</a> <span class="small muted">(מ-GitHub, קובץ גדול)</span>
+                  </dd>
+                </>
+              )}
+              {isSha256Hex(info.certSha256) && (
+                <>
+                  <dt>חתימה</dt>
+                  <dd>
+                    <span class="mono ltr">{fingerprint(info.certSha256)}</span>
+                  </dd>
+                </>
+              )}
+            </dl>
+          </section>
+        ))}
+      </div>
+    )
+  }
+
+  <section class="card verify">
+    <h2>איך מוודאים שהקובץ מקורי</h2>
+    <ul>
+      <li>
+        ב-Windows: <code>certutil -hashfile ShaniShvilin-arm64-v8a.apk SHA256</code> ומשווים לטביעת האצבע שלמעלה.
+      </li>
+      <li>אשף ההתקנה ו"עדכון מקובץ" באפליקציה בודקים את החתימה בעצמם ולא יתקינו קובץ שנחתם בחתימה אחרת.</li>
+      <li>
+        כל הגרסאות וקובץ <code>SHA256SUMS</code> נמצאים גם ב-<a href={RELEASES_URL}>GitHub</a>.
+      </li>
+    </ul>
+  </section>
+</Base>
+
+<style>
+  .kv {
+    margin-top: 18px;
+  }
+  .verify {
+    margin-top: 18px;
+  }
+</style>

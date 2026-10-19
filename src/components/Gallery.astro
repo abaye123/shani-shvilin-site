@@ -1,0 +1,68 @@
+---
+import { Image } from "astro:assets";
+import home from "../assets/screenshots/01-home.png";
+import drawer from "../assets/screenshots/03-app-drawer.png";
+import zmanim from "../assets/screenshots/06-zmanim-day.png";
+import tefila from "../assets/screenshots/08-tefilat-haderech.png";
+import store from "../assets/screenshots/13-store-home.png";
+import storeApp from "../assets/screenshots/15-store-app-page.png";
+import settings from "../assets/screenshots/21-settings-top.png";
+import filterMode from "../assets/screenshots/26-filter-mode.png";
+import restrictions from "../assets/screenshots/27-extra-restrictions.png";
+import watermark from "../assets/screenshots/33-watermark.png";
+
+const shots = [
+  { src: home, caption: "מסך הבית: שעה, תאריך עברי, זמנים, מהירות ומדיה" },
+  { src: drawer, caption: "כל האפליקציות" },
+  { src: zmanim, caption: "זמני היום" },
+  { src: tefila, caption: "תפילת הדרך עם השמעה" },
+  { src: store, caption: "חנות אפליקציות מסוננת" },
+  { src: storeApp, caption: "דף אפליקציה בחנות" },
+  { src: settings, caption: "הגדרות ומצב האכיפה" },
+  { src: filterMode, caption: "מסלולי סינון" },
+  { src: restrictions, caption: "הגבלות נוספות" },
+  { src: watermark, caption: "סימן מים" },
+];
+---
+
+<div class="gallery" role="list">
+  {
+    shots.map((s) => (
+      <figure role="listitem">
+        <Image src={s.src} alt={s.caption} width={270} format="webp" quality={78} loading="lazy" />
+        <figcaption>{s.caption}</figcaption>
+      </figure>
+    ))
+  }
+</div>
+
+<style>
+  .gallery {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(200px, 230px);
+    gap: 18px;
+    overflow-x: auto;
+    padding: 8px 4px 18px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+  }
+  figure {
+    margin: 0;
+    scroll-snap-align: start;
+    text-align: center;
+  }
+  img {
+    width: 100%;
+    height: auto;
+    border-radius: 22px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    background: var(--surface-strong);
+  }
+  figcaption {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+</style>

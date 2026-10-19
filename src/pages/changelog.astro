@@ -1,0 +1,51 @@
+---
+import Base from "../layouts/Base.astro";
+import { formatDate, readReleases, stable, beta } from "../lib/site-data";
+
+const fetched = readReleases();
+// Fallback when the release list was not fetched (local builds): what version.json knows.
+const releases =
+  fetched.length > 0
+    ? fetched
+    : [stable?.info, beta?.info]
+        .filter((x, i, arr) => !!x && arr.findIndex((y) => y?.tag === x.tag) === i)
+        .map((x) => ({ tag: x!.tag, name: x!.versionName, prerelease: x === beta?.info, publishedAt: x!.publishedAt, body: x!.notes ?? "", url: "" }));
+---
+
+<Base title="מה חדש" description="היסטוריית הגרסאות של שני שבילין." narrow>
+  <div class="page-head">
+    <h1>מה חדש</h1>
+  </div>
+  {
+    releases.length === 0 ? (
+      <div class="note">
+        <p>עדיין לא פורסמו גרסאות.</p>
+      </div>
+    ) : (
+      <div class="stack">
+        {releases.map((r) => (
+          <article class="card">
+            <h2>
+              {r.name || r.tag} {r.prerelease && <span class="badge">בטא</span>}
+            </h2>
+            <p class="muted small">{formatDate(r.publishedAt)}</p>
+            {r.body ? (
+              r.body
+                .split(/\r?\n/)
+                .filter((l) => l.trim())
+                .map((l) => <p dir="auto">{l.replace(/^[-*]\s+/, "• ").replace(/^#+\s*/, "")}</p>)
+            ) : (
+              <p class="muted">אין פרטים.</p>
+            )}
+          </article>
+        ))}
+      </div>
+    )
+  }
+</Base>
+
+<style>
+  article p {
+    margin: 4px 0;
+  }
+</style>

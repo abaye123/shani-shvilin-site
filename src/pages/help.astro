@@ -1,0 +1,102 @@
+---
+import Base from "../layouts/Base.astro";
+import CopyCmd from "../components/CopyCmd.astro";
+import CopyScript from "../components/CopyScript.astro";
+import { KNOWN_ERRORS } from "@shani/installer-core";
+
+const groups: { title: string; ids: string[] }[] = [
+  { title: "חיבור המכשיר", ids: ["no-devices", "unauthorized", "usb-busy"] },
+  { title: "הגדרת מנהל המכשיר", ids: ["accounts", "users", "already-owner", "already-provisioned", "unknown-admin", "xiaomi-security"] },
+  {
+    title: "התקנת האפליקציה",
+    ids: ["update-incompatible", "version-downgrade", "user-restricted", "install-aborted", "insufficient-storage", "no-matching-abis", "older-sdk", "filter-blocked"],
+  },
+  { title: "סריקת QR", ids: ["qr-camera"] },
+];
+const byId = new Map(KNOWN_ERRORS.map((e) => [e.id, e]));
+---
+
+<Base title="פתרון בעיות" description="פתרונות לשגיאות נפוצות בהתקנת שני שבילין." narrow>
+  <div class="page-head">
+    <h1>פתרון בעיות</h1>
+    <p class="lead">לוחצים על הודעת השגיאה שקיבלתם כדי לראות מה היא אומרת ואיך מתקנים.</p>
+  </div>
+
+  {
+    groups.map((g) => (
+      <section class="group">
+        <h2>{g.title}</h2>
+        {g.ids.map((id) => {
+          const e = byId.get(id)!;
+          return (
+            <details class="faq" id={e.id}>
+              <summary>
+                <span class="err-msg" dir="auto">
+                  {e.message}
+                </span>
+                <span class="err-title">{e.title}</span>
+              </summary>
+              <p>{e.explanation}</p>
+              <ol>
+                {e.fix.map((f) => (
+                  <li>{f}</li>
+                ))}
+              </ol>
+              {e.commands?.map((c) => (
+                <CopyCmd cmd={c} />
+              ))}
+            </details>
+          );
+        })}
+      </section>
+    ))
+  }
+
+  <section class="card contact">
+    <h2>לא מצאתם?</h2>
+    <p>
+      באשף ההתקנה יש "יומן פעולות" עם כפתור "העתקת יומן". מעתיקים ושולחים אלינו ל-<a href="mailto:cs@abaye.co">cs@abaye.co</a>, ונחזור אליכם. בתוך
+      האפליקציה אפשר גם לשלוח דיווח: תפריט מסך הבית > "דיווח ובקשות".
+    </p>
+  </section>
+  <CopyScript />
+</Base>
+
+<script>
+  // Open the error named in the URL hash (links from the installers).
+  const open = () => {
+    const el = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+    if (el instanceof HTMLDetailsElement) {
+      el.open = true;
+      el.scrollIntoView({ block: "start" });
+    }
+  };
+  open();
+  window.addEventListener("hashchange", open);
+</script>
+
+<style>
+  .group {
+    margin-bottom: 32px;
+  }
+  .faq {
+    scroll-margin-top: 90px;
+  }
+  summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .err-msg {
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: 0.9rem;
+    color: var(--fail);
+    overflow-wrap: anywhere;
+  }
+  .err-title {
+    font-weight: 600;
+  }
+  .contact {
+    margin-top: 12px;
+  }
+</style>
