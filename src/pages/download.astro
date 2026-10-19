@@ -29,7 +29,7 @@ if (beta && beta.info.tag !== stable?.info.tag) channels.push({ label: "גרסת
         {channels.map(({ label, channel, info }) => (
           <section class="card">
             <h2>
-              {label}: {info.versionName}
+              {label}: <bdi dir="ltr">{info.versionName}</bdi>
             </h2>
             <p class="muted">
               פורסמה {formatDate(info.publishedAt)}. <a href="/changelog">מה חדש</a>

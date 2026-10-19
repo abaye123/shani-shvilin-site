@@ -94,9 +94,15 @@ kbd {
 
 .skip {
   position: absolute;
-  inset-inline-start: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 .skip:focus {
+  width: auto;
+  height: auto;
+  clip-path: none;
   inset-inline-start: 16px;
   top: 16px;
   z-index: 10;
@@ -233,7 +239,7 @@ main {
 .grid {
   display: grid;
   gap: 18px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 .grid > .card + .card {
   margin-top: 0;

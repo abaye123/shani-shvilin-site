@@ -488,8 +488,13 @@ export class Wizard {
         case "space":
           return await this.checkSpace(dev);
         case "apk":
-          await this.checkApk();
-          return await this.runCheck("signer");
+          try {
+            await this.checkApk();
+          } finally {
+            // Re-evaluate the installed version against the (new or missing) file.
+            void this.runCheck("signer");
+          }
+          return;
         case "signer":
           return await this.checkSigner(dev);
       }
@@ -664,12 +669,14 @@ export class Wizard {
       this.busy = false;
       this.apkProgress = null;
     }
+    // Label by the release actually served (stable paths carry the beta until a stable exists).
+    this.apk.channel = resolved.channel;
     this.setCheck("apk", { status: "ok", summary: this.apkSummaryText(this.apk) });
   }
 
   private apkSummaryText(apk: ApkCandidate): string {
-    const src = apk.source === "local" ? `קובץ מהמחשב: ${apk.fileName}` : `הורדה מהאתר (${apk.channel === "beta" ? "בטא" : "יציבה"})`;
-    return `גרסה ${apk.summary.versionName ?? "?"}, ${formatBytes(apk.summary.size)}, ${src}`;
+    const src = apk.source === "local" ? `קובץ מהמחשב: ${ltr(apk.fileName)}` : `הורדה מהאתר (${apk.channel === "beta" ? "בטא" : "יציבה"})`;
+    return `גרסה ${ltr(apk.summary.versionName ?? "?")}, ${formatBytes(apk.summary.size)}, ${src}`;
   }
 
   private async pickLocalFile(file: File): Promise<void> {
@@ -686,13 +693,14 @@ export class Wizard {
     await this.runCheck("signer");
   }
 
+
   private async checkSigner(dev: AdbDevice): Promise<void> {
     this.pkg = await readPackage(dev, this.log);
     if (!this.pkg.installed) {
       this.setCheck("signer", { status: "ok", summary: "שני שבילין לא מותקנת עדיין." });
       return;
     }
-    const current = `מותקנת גרסה ${this.pkg.versionName ?? "?"}`;
+    const current = `מותקנת גרסה ${ltr(this.pkg.versionName ?? "?")}`;
     if (!this.apk) {
       this.setCheck("signer", { status: "pending", summary: `${current}. ממתין לקובץ ההתקנה.` });
       return;
@@ -709,7 +717,7 @@ export class Wizard {
       this.setCheck("signer", { status: "fail", summary: `${current}, חדשה מהקובץ.`, error: describeError(new InstallerError("version-downgrade")) });
       return;
     }
-    this.setCheck("signer", { status: "ok", summary: `${current}. היא תעודכן לגרסה ${this.apk.summary.versionName ?? "?"}.` });
+    this.setCheck("signer", { status: "ok", summary: `${current}. היא תעודכן לגרסה ${ltr(this.apk.summary.versionName ?? "?")}.` });
   }
 
   private viewChecks(): HTMLElement {
@@ -761,7 +769,7 @@ export class Wizard {
           ),
         );
         if (this.apk.source === "local" && !this.apk.release?.certSha256) {
-          extra.push(h("div", { class: "sw-note" }, "אין חיבור לאתר, ולכן לא ניתן לוודא שהחתימה רשמית. ודאו שטביעת האצבע של החתימה זהה לזו שמופיעה בעמוד ההורדות."));
+          extra.push(h("div", { class: "sw-note" }, "לא ניתן היה לוודא מול האתר שהחתימה רשמית. השוו את טביעת האצבע של החתימה לזו שמופיעה בעמוד ההורדות."));
         }
       }
       const input = h("input", { type: "file", accept: ".apk,application/vnd.android.package-archive", class: "sw-hidden" }) as HTMLInputElement;
@@ -833,10 +841,10 @@ export class Wizard {
         h("dt", null, "אנדרואיד"),
         h("dd", null, `${info.release} (SDK ${info.sdk})`),
         h("dt", null, "גרסה להתקנה"),
-        h("dd", null, `${apk.summary.versionName ?? "?"}${apk.channel === "beta" ? " (בטא)" : ""}`),
+        h("dd", null, `${ltr(apk.summary.versionName ?? "?")}${apk.channel === "beta" ? " (בטא)" : ""}`),
         h("dt", null, "קובץ"),
-        h("dd", { dir: "auto" }, `${apk.fileName}, ${formatBytes(apk.summary.size)}`),
-        this.pkg?.installed ? [h("dt", null, "מותקנת כעת"), h("dd", null, this.pkg.versionName ?? "?")] : null,
+        h("dd", { dir: "auto" }, `${ltr(apk.fileName)}, ${formatBytes(apk.summary.size)}`),
+        this.pkg?.installed ? [h("dt", null, "מותקנת כעת"), h("dd", null, ltr(this.pkg.versionName ?? "?"))] : null,
       ),
       h("h3", { class: "sw-sub" }, "מה יתבצע"),
       h("ol", { class: "sw-list" }, actions.map((a) => h("li", null, a))),
@@ -997,6 +1005,11 @@ export class Wizard {
 }
 
 // ---------------------------------------------------------------- helpers
+
+/** Isolates a left-to-right token (version, file name) inside Hebrew text. */
+function ltr(s: string): string {
+  return `⁦${s}⁩`;
+}
 
 function freshChecks(): Record<CheckId, CheckState> {
   return Object.fromEntries(CHECK_ORDER.map((id) => [id, { status: "pending" }])) as Record<CheckId, CheckState>;

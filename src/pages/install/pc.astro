@@ -24,7 +24,7 @@ const available = installerAvailable() && inst;
             </a>
           </div>
           <p class="consent">
-            גרסה {inst.version}
+            גרסה <bdi dir="ltr">{inst.version}</bdi>
             {inst.size ? `, ${formatBytes(inst.size)}` : ""}. Windows 10 או 11, 64 ביט. {DOWNLOAD_CONSENT_LINE} (<a href="/terms">תנאי השימוש</a>).
           </p>
           {inst.sha256 && (

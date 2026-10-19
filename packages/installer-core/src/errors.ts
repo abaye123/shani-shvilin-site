@@ -296,8 +296,10 @@ export interface ErrorDescription {
 
 /** Turns anything thrown into a Hebrew explanation. */
 export function describeError(err: unknown): ErrorDescription {
-  const raw = err instanceof Error ? err.message : String(err);
-  const id = err instanceof InstallerError ? err.id : findKnownError(raw)?.id ?? "unknown";
+  const msg = err instanceof Error ? err.message : String(err);
+  const id = err instanceof InstallerError ? err.id : findKnownError(msg)?.id ?? "unknown";
+  // An InstallerError without its own message carries only the id; nothing technical to show.
+  const raw = msg && msg !== id ? msg : undefined;
   const known = KNOWN_ERRORS.find((e) => e.id === id);
   if (known) return { id, title: known.title, explanation: known.explanation, fix: known.fix, commands: known.commands, detail: raw };
   const internal = INTERNAL_ERRORS[id];
@@ -307,7 +309,7 @@ export function describeError(err: unknown): ErrorDescription {
     title: "אירעה שגיאה",
     explanation: "משהו השתבש. הפרטים מופיעים ביומן.",
     fix: ["מנסים שוב.", "אם זה חוזר, מעתיקים את היומן ושולחים אלינו: cs@abaye.co"],
-    detail: raw,
+    detail: raw ?? msg,
   };
 }
 
