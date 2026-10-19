@@ -12,6 +12,7 @@ use std::fs;
 use std::io::{Cursor, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tauri::ipc::{InvokeBody, Request, Response};
@@ -89,6 +90,9 @@ fn check_url(url: &str) -> Result<(), String> {
     }
 }
 
+/// Set by `cancel_tools`; the download loop checks it between reads.
+static TOOLS_CANCELLED: AtomicBool = AtomicBool::new(false);
+
 struct Fetched {
     status: u16,
     content_type: String,
@@ -98,6 +102,14 @@ struct Fetched {
 /// GET with progress. Non-2xx responses are returned, not treated as errors, so the
 /// caller can tell a filter block page from a network failure.
 fn fetch(url: &str, mut on_progress: impl FnMut(u64, u64)) -> Result<Fetched, String> {
+    fetch_cancellable(url, &mut on_progress, None)
+}
+
+fn fetch_cancellable(
+    url: &str,
+    on_progress: &mut impl FnMut(u64, u64),
+    cancel: Option<&AtomicBool>,
+) -> Result<Fetched, String> {
     check_url(url)?;
     let resp = match http_agent()?.get(url).call() {
         Ok(r) => r,
@@ -112,6 +124,9 @@ fn fetch(url: &str, mut on_progress: impl FnMut(u64, u64)) -> Result<Fetched, St
     let mut buf = [0u8; 64 * 1024];
     let mut last_emit = Instant::now();
     loop {
+        if cancel.is_some_and(|c| c.load(Ordering::SeqCst)) {
+            return Err("cancelled".into());
+        }
         let n = reader.read(&mut buf).map_err(|e| format!("download-failed: {e}"))?;
         if n == 0 {
             break;
@@ -150,10 +165,15 @@ fn tools_status(app: AppHandle) -> ToolsStatus {
 /// Downloads platform-tools from Google and extracts adb into the app's local data dir.
 #[tauri::command]
 async fn install_tools(app: AppHandle) -> Result<String, String> {
+    TOOLS_CANCELLED.store(false, Ordering::SeqCst);
     tauri::async_runtime::spawn_blocking(move || {
-        let fetched = fetch(PLATFORM_TOOLS_URL, |received, total| {
-            let _ = app.emit("tools-progress", Progress { received, total });
-        })?;
+        let fetched = fetch_cancellable(
+            PLATFORM_TOOLS_URL,
+            &mut |received, total| {
+                let _ = app.emit("tools-progress", Progress { received, total });
+            },
+            Some(&TOOLS_CANCELLED),
+        )?;
         if fetched.status != 200 {
             return Err(format!("download-failed: HTTP {}", fetched.status));
         }
@@ -184,6 +204,12 @@ async fn install_tools(app: AppHandle) -> Result<String, String> {
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+/// Stops a platform-tools download in progress; `install_tools` then fails with "cancelled".
+#[tauri::command]
+fn cancel_tools() {
+    TOOLS_CANCELLED.store(true, Ordering::SeqCst);
 }
 
 #[derive(Serialize)]
@@ -341,6 +367,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             tools_status,
             install_tools,
+            cancel_tools,
             adb,
             adb_push,
             http_get,

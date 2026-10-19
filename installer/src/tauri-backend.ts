@@ -78,7 +78,7 @@ export class AdbExeBackend implements AdbBackend {
     return null;
   }
 
-  private async ensureTools(onStatus: ConnectOptions["onStatus"]): Promise<void> {
+  private async ensureTools(onStatus: ConnectOptions["onStatus"], signal: AbortSignal): Promise<void> {
     const status = await invoke<{ ready: boolean; path: string | null }>("tools_status");
     if (status.ready) return;
     onStatus({ kind: "preparing", message: "מורידים מגוגל את כלי החיבור (platform-tools, פעם אחת בלבד)...", progress: 0 });
@@ -90,18 +90,24 @@ export class AdbExeBackend implements AdbBackend {
         progress: total ? received / total : undefined,
       });
     });
+    // "ביטול" in the wizard aborts the signal; the native download checks a flag
+    // between reads and stops within a moment.
+    const onAbort = () => void invoke("cancel_tools");
+    signal.addEventListener("abort", onAbort);
     try {
       await invoke<string>("install_tools");
     } catch (e) {
       const msg = String(e);
+      if (signal.aborted || msg.includes("cancelled")) throw new DOMException("Aborted", "AbortError");
       throw new InstallerError(msg.includes("filter-blocked") || msg.includes("download-failed") ? "tools-download" : "unknown", msg);
     } finally {
+      signal.removeEventListener("abort", onAbort);
       unlisten();
     }
   }
 
   async connect({ onStatus, signal }: ConnectOptions): Promise<AdbDevice> {
-    await this.ensureTools(onStatus);
+    await this.ensureTools(onStatus, signal);
     onStatus({ kind: "preparing", message: "מפעילים את כלי החיבור..." });
     await adb(["start-server"]);
     onStatus({ kind: "waiting-device" });
