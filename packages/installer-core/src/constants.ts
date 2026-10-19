@@ -8,7 +8,7 @@ export const DEBUG_PACKAGE = `${APP_PACKAGE}.debug`;
 export const REMOTE_APK_PATH = "/data/local/tmp/shanishvilin.apk";
 
 export const SITE_URL = "https://shanishvilin.abaye.co";
-export const CONTACT_EMAIL = "cs@abaye.co";
+export const CONTACT_EMAIL = "shanishvilin@abaye.co";
 export const DEVELOPER_URL = "https://abaye.co";
 
 export const MIN_SDK = 24;

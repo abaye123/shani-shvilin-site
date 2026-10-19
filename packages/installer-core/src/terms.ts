@@ -78,7 +78,7 @@ export const TERMS: TermsSection[] = [
   },
   {
     title: "יצירת קשר",
-    body: "בכל שאלה אפשר לפנות בדוא\"ל: cs@abaye.co",
+    body: "בכל שאלה אפשר לפנות בדוא\"ל: shanishvilin@abaye.co",
   },
 ];
 
