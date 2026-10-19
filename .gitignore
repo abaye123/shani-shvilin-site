@@ -12,3 +12,5 @@ installer/dist/
 *.log
 .env
 installer/src-tauri/gen/
+
+SPEC.md
