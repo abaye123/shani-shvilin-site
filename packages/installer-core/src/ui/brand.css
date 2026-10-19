@@ -1,0 +1,82 @@
+/*
+ * Shani Shvilin brand tokens, shared by the site and the PC installer.
+ * Icon gradient teal #00C9A7 to blue #0A84FF, accent yellow #FFE066,
+ * light translucent rounded cards.
+ */
+:root {
+  --brand-teal: #00c9a7;
+  --brand-blue: #0a84ff;
+  --brand-yellow: #ffe066;
+  --brand-gradient: linear-gradient(135deg, var(--brand-teal), var(--brand-blue));
+
+  --radius: 24px;
+  --radius-sm: 14px;
+  --font: "IBM Plex Sans Hebrew", system-ui, "Segoe UI", Arial, sans-serif;
+
+  --bg: #f3f8fb;
+  --bg-glow-1: rgba(0, 201, 167, 0.16);
+  --bg-glow-2: rgba(10, 132, 255, 0.14);
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-strong: #ffffff;
+  --border: rgba(16, 42, 67, 0.09);
+  --text: #102a43;
+  --text-muted: #52667a;
+  --link: #0a6fd6;
+  --primary: #0a84ff;
+  --primary-text: #ffffff;
+  --ok: #0a9b7c;
+  --warn: #b7791f;
+  --fail: #d64545;
+  --fail-bg: rgba(214, 69, 69, 0.08);
+  --note-bg: rgba(255, 224, 102, 0.35);
+  --note-border: rgba(214, 170, 0, 0.35);
+  --code-bg: rgba(16, 42, 67, 0.06);
+  --shadow: 0 10px 30px rgba(16, 42, 67, 0.08);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1622;
+    --bg-glow-1: rgba(0, 201, 167, 0.12);
+    --bg-glow-2: rgba(10, 132, 255, 0.14);
+    --surface: rgba(22, 36, 52, 0.78);
+    --surface-strong: #13202e;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #e6eef6;
+    --text-muted: #9fb3c8;
+    --link: #5fb0ff;
+    --primary: #2b95ff;
+    --ok: #2fd3ae;
+    --warn: #f0b429;
+    --fail: #ff7b7b;
+    --fail-bg: rgba(255, 123, 123, 0.1);
+    --note-bg: rgba(255, 224, 102, 0.12);
+    --note-border: rgba(255, 224, 102, 0.3);
+    --code-bg: rgba(255, 255, 255, 0.07);
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0b1622;
+  --bg-glow-1: rgba(0, 201, 167, 0.12);
+  --bg-glow-2: rgba(10, 132, 255, 0.14);
+  --surface: rgba(22, 36, 52, 0.78);
+  --surface-strong: #13202e;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #e6eef6;
+  --text-muted: #9fb3c8;
+  --link: #5fb0ff;
+  --primary: #2b95ff;
+  --ok: #2fd3ae;
+  --warn: #f0b429;
+  --fail: #ff7b7b;
+  --fail-bg: rgba(255, 123, 123, 0.1);
+  --note-bg: rgba(255, 224, 102, 0.12);
+  --note-border: rgba(255, 224, 102, 0.3);
+  --code-bg: rgba(255, 255, 255, 0.07);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}

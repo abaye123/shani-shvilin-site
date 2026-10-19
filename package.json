@@ -1,0 +1,28 @@
+{
+  "name": "shani-shvilin-site",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/installer-core",
+    "installer"
+  ],
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "tsc -p packages/installer-core --noEmit && tsc -p installer --noEmit",
+    "installer:dev": "npm run tauri -w installer -- dev",
+    "installer:build": "npm run tauri -w installer -- build",
+    "fetch-release": "node scripts/fetch-release.mjs"
+  },
+  "dependencies": {
+    "astro": "7.3.8",
+    "qrcode": "1.5.4"
+  },
+  "devDependencies": {
+    "@types/qrcode": "1.5.5",
+    "@types/w3c-web-usb": "1.0.14",
+    "typescript": "7.0.2",
+    "wawoff2": "2.0.1"
+  }
+}
