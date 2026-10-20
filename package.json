@@ -13,7 +13,8 @@
     "typecheck": "tsc -p packages/installer-core --noEmit && tsc -p installer --noEmit",
     "installer:dev": "npm run tauri -w installer -- dev",
     "installer:build": "npm run tauri -w installer -- build",
-    "fetch-release": "node scripts/fetch-release.mjs"
+    "fetch-release": "node scripts/fetch-release.mjs",
+    "fetch-catalog": "node scripts/fetch-catalog.mjs"
   },
   "dependencies": {
     "astro": "7.3.8",

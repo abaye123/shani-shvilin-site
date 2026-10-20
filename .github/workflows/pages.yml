@@ -35,6 +35,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FETCH_STRICT: "1"
+      - name: Fetch the app catalog and its icons (for /apps)
+        run: node scripts/fetch-catalog.mjs
+        env:
+          FETCH_STRICT: "1"
       - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

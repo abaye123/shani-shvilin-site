@@ -1,0 +1,355 @@
+---
+import { readFileSync } from "node:fs";
+import Base from "../layouts/Base.astro";
+
+// Written by scripts/fetch-catalog.mjs at build time; empty when it has not run.
+type App = {
+  packageName: string;
+  nameHe: string;
+  nameEn: string;
+  category: string;
+  minUserMode: string;
+  sha256: string[];
+  source: string | null;
+  sourceId: string | null;
+  recommended: boolean;
+  needsAcceptance: boolean;
+  excludedFromReducedRisk: boolean;
+  network: "open" | "blacklist" | "whitelist" | "offline" | "by-mode";
+  icon: string | null;
+};
+let data: { generatedAt: string | null; apps: App[] } = { generatedAt: null, apps: [] };
+try {
+  data = JSON.parse(readFileSync("src/generated/catalog.json", "utf8"));
+} catch {
+  // No catalog fetched: the page says so instead of failing the build.
+}
+
+// The filter tracks, as the app names them. OFFLINE and LOCAL_ONLY have no
+// store, so they are not offered here.
+const MODES = [
+  { id: "ALL", label: "הכול" },
+  { id: "NAVIGATION_ONLY", label: "ניווט בלבד" },
+  { id: "NAVIGATION_AND_MAIL_ONLY", label: "ניווט ודואר" },
+  { id: "REDUCED_RISK", label: "סיכון מופחת" },
+  { id: "MOST_OPEN", label: "פתוח" },
+];
+const LEVEL: Record<string, number> = {
+  OFFLINE: 0,
+  LOCAL_ONLY: 1,
+  NAVIGATION_ONLY: 2,
+  NAVIGATION_AND_MAIL_ONLY: 3,
+  REDUCED_RISK: 4,
+  MOST_OPEN: 5,
+};
+const MODE_LABEL: Record<string, string> = {
+  OFFLINE: "כל המסלולים",
+  LOCAL_ONLY: "כל המסלולים",
+  NAVIGATION_ONLY: "ממסלול ניווט בלבד",
+  NAVIGATION_AND_MAIL_ONLY: "ממסלול ניווט ודואר",
+  REDUCED_RISK: "ממסלול סיכון מופחת",
+  MOST_OPEN: "רק במסלול פתוח",
+};
+const CATEGORY: Record<string, string> = {
+  NAVIGATION: "ניווט",
+  MAIL: "דואר",
+  COMMUNICATION: "תקשורת",
+  MUSIC_AUDIO: "מוזיקה",
+  VIDEO: "וידאו",
+  TORAH: "תורה",
+  PRODUCTIVITY: "פרודוקטיביות",
+  TOOLS: "כלים",
+  FINANCE: "פיננסים",
+  HEALTH_FITNESS: "בריאות",
+  NEWS: "חדשות",
+  GOVERNMENT: "ממשלה",
+  HOME: "בית חכם",
+  SYSTEM: "מערכת",
+};
+const NETWORK: Record<App["network"], string> = {
+  open: "אינטרנט מלא",
+  blacklist: "סינון פנימי",
+  whitelist: "רק כתובות מאושרות",
+  offline: "ללא אינטרנט",
+  "by-mode": "סינון לפי מסלול",
+};
+const SOURCE: Record<string, string> = { PLAY: "Google Play", GITHUB: "GitHub" };
+const short = (h: string) => `${h.slice(0, 8)}…${h.slice(-8)}`;
+const updated = data.generatedAt ? new Date(data.generatedAt).toLocaleDateString("he-IL") : null;
+---
+
+<Base
+  title="אפליקציות בקטלוג"
+  description="כל האפליקציות שבחנות של שני שבילין, לפי מסלול סינון, עם חתימת הקובץ המאושרת של כל אחת."
+>
+  <div class="page-head">
+    <h1>אפליקציות בקטלוג</h1>
+    <p class="lead">
+      כל מה שאפשר להתקין מהחנות של שני שבילין. בחרו מסלול כדי לראות מה זמין בו. החתימה היא טביעת
+      האצבע של מפתח החתימה של האפליקציה: החנות מתקינה קובץ רק אם הוא חתום בדיוק בה.
+    </p>
+  </div>
+
+  {
+    data.apps.length === 0 ? (
+      <div class="note">
+        <p>רשימת האפליקציות לא זמינה כרגע. נסו שוב מאוחר יותר.</p>
+      </div>
+    ) : (
+      <>
+        <div class="controls card">
+          <div class="modes" role="radiogroup" aria-label="מסלול סינון">
+            {MODES.map((m, i) => (
+              <button type="button" class="mode" role="radio" data-mode={m.id} aria-checked={i === 0 ? "true" : "false"}>
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <input id="q" type="search" placeholder="חיפוש לפי שם או חבילה" aria-label="חיפוש" autocomplete="off" />
+          <p class="count muted" id="count" aria-live="polite"></p>
+        </div>
+
+        <ul class="apps" id="apps">
+          {data.apps.map((a) => (
+            <li
+              class="app card"
+              data-level={LEVEL[a.minUserMode] ?? 5}
+              data-noreduced={a.excludedFromReducedRisk ? "1" : "0"}
+              data-search={`${a.nameHe} ${a.nameEn} ${a.packageName}`.toLowerCase()}
+            >
+              <div class="icon" aria-hidden="true">
+                {a.icon ? <img src={a.icon} alt="" width="48" height="48" loading="lazy" /> : <span>{a.nameHe.slice(0, 1)}</span>}
+              </div>
+              <div class="body">
+                <div class="title">
+                  <strong>{a.nameHe}</strong>
+                  {a.nameEn && a.nameEn !== a.nameHe && <span class="muted en">{a.nameEn}</span>}
+                </div>
+                <div class="tags">
+                  <span class="tag">{CATEGORY[a.category] ?? a.category}</span>
+                  <span class={`tag net-${a.network}`}>{NETWORK[a.network]}</span>
+                  <span class="tag">{MODE_LABEL[a.minUserMode] ?? a.minUserMode}</span>
+                  {a.recommended && <span class="tag rec">מומלץ</span>}
+                  {a.needsAcceptance && <span class="tag warn">דורש אישור</span>}
+                  {a.source && <span class="tag">{SOURCE[a.source] ?? a.source}</span>}
+                </div>
+                <div class="pkg" dir="ltr">{a.packageName}</div>
+                {a.sha256.map((h) => (
+                  <button type="button" class="sig" dir="ltr" data-full={h} title={`SHA-256: ${h} (לחיצה מעתיקה)`}>
+                    SHA-256 {short(h)}
+                  </button>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p class="muted small" id="empty" hidden>אין אפליקציות שמתאימות לחיפוש.</p>
+        {updated && <p class="muted small">הקטלוג עודכן ב-{updated}.</p>}
+      </>
+    )
+  }
+</Base>
+
+<script>
+  // Filters in place: everything is already in the page, so a shared link
+  // (?mode=...&q=...) opens on the same view with no request at all.
+  const LEVEL: Record<string, number> = {
+    NAVIGATION_ONLY: 2,
+    NAVIGATION_AND_MAIL_ONLY: 3,
+    REDUCED_RISK: 4,
+    MOST_OPEN: 5,
+  };
+  const list = document.getElementById("apps");
+  if (list) {
+    const q = document.getElementById("q") as HTMLInputElement;
+    const count = document.getElementById("count")!;
+    const empty = document.getElementById("empty")!;
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>(".mode")];
+    const items = [...list.querySelectorAll<HTMLLIElement>(".app")];
+    const params = new URLSearchParams(location.search);
+    let mode = params.get("mode") ?? "ALL";
+    if (mode !== "ALL" && !(mode in LEVEL)) mode = "ALL";
+    q.value = params.get("q") ?? "";
+
+    const apply = () => {
+      const text = q.value.trim().toLowerCase();
+      let shown = 0;
+      for (const li of items) {
+        const fitsMode =
+          mode === "ALL" ||
+          (Number(li.dataset.level) <= LEVEL[mode] && !(mode === "REDUCED_RISK" && li.dataset.noreduced === "1"));
+        const fitsText = !text || li.dataset.search!.includes(text);
+        li.hidden = !(fitsMode && fitsText);
+        if (!li.hidden) shown++;
+      }
+      buttons.forEach((b) => b.setAttribute("aria-checked", String(b.dataset.mode === mode)));
+      count.textContent = `${shown} אפליקציות`;
+      empty.hidden = shown > 0;
+      const next = new URLSearchParams();
+      if (mode !== "ALL") next.set("mode", mode);
+      if (text) next.set("q", q.value.trim());
+      history.replaceState(null, "", next.toString() ? `?${next}` : location.pathname);
+    };
+
+    buttons.forEach((b) =>
+      b.addEventListener("click", () => {
+        mode = b.dataset.mode!;
+        apply();
+      }),
+    );
+    q.addEventListener("input", apply);
+    list.addEventListener("click", async (ev) => {
+      const sig = (ev.target as HTMLElement).closest<HTMLButtonElement>(".sig");
+      if (!sig) return;
+      try {
+        await navigator.clipboard.writeText(sig.dataset.full!);
+        const before = sig.textContent;
+        sig.textContent = "הועתק";
+        setTimeout(() => (sig.textContent = before), 1200);
+      } catch {
+        // Clipboard refused: the full value is in the title.
+      }
+    });
+    apply();
+  }
+</script>
+
+<style>
+  .controls {
+    position: sticky;
+    top: 72px;
+    z-index: 2;
+    display: grid;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .mode {
+    font: inherit;
+    font-size: 0.95rem;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-strong);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .mode[aria-checked="true"] {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-text);
+  }
+  #q {
+    font: inherit;
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface-strong);
+    color: var(--text);
+  }
+  .count {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+  .apps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 12px;
+  }
+  .app {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin: 0;
+    min-width: 0;
+  }
+  .app[hidden] {
+    display: none;
+  }
+  .icon {
+    flex: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: var(--brand-gradient);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+  .icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .body {
+    min-width: 0;
+    flex: 1;
+  }
+  .title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .en {
+    font-size: 0.9rem;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 6px 0;
+  }
+  .tag {
+    font-size: 0.78rem;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--code-bg);
+    color: var(--text-muted);
+  }
+  .tag.rec {
+    color: var(--ok);
+  }
+  .tag.warn,
+  .tag.net-open {
+    color: var(--warn);
+  }
+  .tag.net-offline {
+    color: var(--text-muted);
+  }
+  .tag.net-blacklist,
+  .tag.net-whitelist {
+    color: var(--ok);
+  }
+  .pkg {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  .sig {
+    display: block;
+    margin-top: 4px;
+    font: 0.78rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    padding: 2px 8px;
+    border-radius: 8px;
+    border: 1px dashed var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: copy;
+  }
+  .small {
+    font-size: 0.85rem;
+  }
+</style>

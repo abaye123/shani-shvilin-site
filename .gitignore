@@ -5,6 +5,7 @@ dist/
 public/apk/
 public/update/
 public/downloads/
+public/app-icons/
 src/generated/
 # Tauri build output
 installer/src-tauri/target/
