@@ -33,7 +33,7 @@ const releases =
               r.body
                 .split(/\r?\n/)
                 .filter((l) => l.trim())
-                .map((l) => <p dir="auto">{l.replace(/^[-*]\s+/, "• ").replace(/^#+\s*/, "")}</p>)
+                .map((l) => <p dir="rtl">{l.replace(/^[-*]\s+/, "• ").replace(/^#+\s*/, "")}</p>)
             ) : (
               <p class="muted">אין פרטים.</p>
             )}
