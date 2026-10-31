@@ -3,7 +3,7 @@ import Base from "../layouts/Base.astro";
 import Gallery from "../components/Gallery.astro";
 import { Image } from "astro:assets";
 import icon from "../assets/icons/icon-app.png";
-import { stable } from "../lib/site-data";
+import { apkDownloads, formatDownloads, stable } from "../lib/site-data";
 
 const features = [
   { t: "מסך בית לטלפון ולרכב", d: "שעה, תאריך עברי ולועזי, הזמן הקרוב, מזג אוויר, מד מהירות, אריחי ניווט ומוזיקה ופקדי מדיה. גדול, ברור ונוח גם במולטימדיה של הרכב." },
@@ -13,12 +13,14 @@ const features = [
   { t: "הגנה מפני הסרה", d: "האפליקציה מנהלת את המכשיר. שינוי הגדרות והסרה דורשים סיסמה, ואיפוס יצרן ומצב בטוח חסומים." },
   { t: "פרטיות", d: "לא נאספים שם, חשבון או מיקום. נשלח רק מה שנדרש לסנכרון הקטלוג ולבדיקת עדכונים." },
 ];
+const downloads = formatDownloads(apkDownloads);
 ---
 
 <Base title="שני שבילין">
   <section class="hero">
     <div class="hero-text">
       <span class="badge">{stable ? <>גרסה <bdi dir="ltr">{stable.info.versionName}</bdi></> : "בקרוב"}</span>
+      {downloads && <span class="muted small downloads">{downloads}</span>}
       <h1>שני שבילין</h1>
       <p class="lead">מסך בית מסונן לטלפון ולמולטימדיה של הרכב, עם חנות אפליקציות וסינון פנימי. פשוט, נקי ושקט.</p>
       <div class="btn-row">
@@ -86,6 +88,9 @@ const features = [
     background-clip: text;
     color: transparent;
     margin-top: 10px;
+  }
+  .downloads {
+    margin-inline-start: 8px;
   }
   .section {
     margin-top: 48px;

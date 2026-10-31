@@ -2,8 +2,9 @@
 import Base from "../layouts/Base.astro";
 import DownloadButtons from "../components/DownloadButtons.astro";
 import { SUPPORTED_ABIS, apkPath, fingerprint, formatBytes, isSha256Hex, type ChannelInfo, type Channel } from "@shani/installer-core";
-import { beta, formatDate, stable } from "../lib/site-data";
+import { apkDownloads, beta, formatDate, formatDownloads, stable } from "../lib/site-data";
 
+const downloads = formatDownloads(apkDownloads);
 const RELEASES_URL = "https://github.com/abaye123/shani-shvilin-releases/releases";
 const channels: { label: string; channel: Channel; info: ChannelInfo }[] = [];
 if (stable) channels.push({ label: stable.channel === "beta" ? "גרסה נוכחית (בטא)" : "גרסה יציבה", channel: "stable", info: stable.info });
@@ -17,6 +18,7 @@ if (beta && beta.info.tag !== stable?.info.tag) channels.push({ label: "גרסת
       להתקנה מלאה (עם הגדרת מנהל המכשיר) עדיף <a href="/install">אשף ההתקנה</a>. הקבצים כאן מיועדים להתקנה ידנית, לעדכון בלי אינטרנט ולהתקנה
       ביחידת הרכב.
     </p>
+    {downloads && <p class="muted small downloads">{downloads} מאז הגרסה הראשונה</p>}
   </div>
 
   {
@@ -87,6 +89,9 @@ if (beta && beta.info.tag !== stable?.info.tag) channels.push({ label: "גרסת
 </Base>
 
 <style>
+  .downloads {
+    margin-top: 8px;
+  }
   .kv {
     margin-top: 18px;
   }

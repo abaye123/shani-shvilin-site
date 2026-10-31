@@ -40,6 +40,9 @@ jobs:
         env:
           FETCH_STRICT: "1"
       - run: npm run build
+        env:
+          # Raises the API limit for the download count (src/lib/site-data.ts).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

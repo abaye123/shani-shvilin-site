@@ -60,6 +60,44 @@ export function readReleases(): ReleaseEntry[] {
   }
 }
 
+const RELEASES_REPO = process.env.RELEASES_REPO ?? "abaye123/shani-shvilin-releases";
+
+/**
+ * Total download count of every .apk asset across all releases, read from the GitHub API at
+ * build time. Null when the API is unreachable or rate limited, so the count is simply omitted.
+ */
+async function fetchApkDownloads(): Promise<number | null> {
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "shani-shvilin-site-build",
+  };
+  if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+  try {
+    let total = 0;
+    for (let page = 1; ; page++) {
+      const url = `https://api.github.com/repos/${RELEASES_REPO}/releases?per_page=100&page=${page}`;
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(10_000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const list = (await res.json()) as { assets?: { name: string; download_count: number }[] }[];
+      for (const r of list) {
+        for (const a of r.assets ?? []) if (a.name.endsWith(".apk")) total += a.download_count ?? 0;
+      }
+      if (list.length < 100) return total;
+    }
+  } catch (e) {
+    console.warn(`download count unavailable: ${(e as Error).message}`);
+    return null;
+  }
+}
+
+export const apkDownloads = await fetchApkDownloads();
+
+/** "143 הורדות", or null when there is no count to show. */
+export function formatDownloads(n: number | null): string | null {
+  if (!n) return null;
+  return n === 1 ? "הורדה אחת" : `${n.toLocaleString("he-IL")} הורדות`;
+}
+
 export function formatDate(iso: string | undefined): string {
   if (!iso) return "";
   const d = new Date(iso);
