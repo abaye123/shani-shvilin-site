@@ -37,7 +37,7 @@ import { ADMIN_COMPONENT, APP_PACKAGE, MAIN_ACTIVITY } from "@shani/installer-co
       <p>אין חשבונות (הרשימה צריכה להיות ריקה):</p>
       <CopyCmd cmd="adb shell dumpsys account | grep -i 'Account {'" />
       <p>יש משתמש אחד בלבד:</p>
-      <CopyCmd cmd="adb shell pm list-users" />
+      <CopyCmd cmd="adb shell pm list users" />
       <p>אין מנהל מכשיר אחר:</p>
       <CopyCmd cmd="adb shell dpm list-owners" />
     </section>

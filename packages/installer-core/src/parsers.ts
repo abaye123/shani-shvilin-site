@@ -87,11 +87,18 @@ export interface UserInfo {
   flags: string;
 }
 
-/** Parses `pm list-users`: lines like `UserInfo{0:Owner:c13} running`. */
+/**
+ * Parses `pm list users` (lines like `UserInfo{0:Owner:c13} running`) or `dumpsys user`,
+ * which can name the same user more than once; each id is kept once.
+ */
 export function parseUsers(text: string): UserInfo[] {
   const out: UserInfo[] = [];
+  const seen = new Set<number>();
   for (const m of text.matchAll(/UserInfo\{(\d+):([^:}]*):?([0-9a-fA-F]*)\}/g)) {
-    out.push({ id: parseInt(m[1], 10), name: m[2], flags: m[3] });
+    const id = parseInt(m[1], 10);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push({ id, name: m[2], flags: m[3] });
   }
   return out;
 }

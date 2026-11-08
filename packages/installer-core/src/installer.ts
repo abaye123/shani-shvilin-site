@@ -85,8 +85,40 @@ export async function readAccounts(dev: AdbDevice, log: Logger): Promise<Account
   return accounts;
 }
 
+/**
+ * The users and profiles on the device. `pm list users`, with a space: the hyphenated
+ * form this used to run is not a command at all, answered "Unknown command", parsed as
+ * no users, and so passed every device, including ones with a Secure Folder or a work
+ * profile that then refused the owner. `dumpsys user` is the fallback for a build whose
+ * pm prints nothing useful.
+ */
 export async function readUsers(dev: AdbDevice, log: Logger): Promise<UserInfo[]> {
-  return parseUsers(await sh(dev, log, "pm list-users"));
+  const users = parseUsers(await sh(dev, log, "pm list users 2>&1"));
+  if (users.length > 0) return users;
+  log("cmd", "$ dumpsys user");
+  return parseUsers(await dev.shell("dumpsys user"));
+}
+
+/**
+ * What the log needs when the owner is refused without a reason. Android states the
+ * reason for accounts and users; "Can't set package ... as device owner" is what is left
+ * when setDeviceOwner just returns false, which on AOSP means the device lacks the
+ * device admin feature and on Samsung can also be one of its own checks, the financing
+ * lock (Knox Guard) among them. Everything here only reads, and the answer goes to the
+ * log, so the next report of this carries the cause.
+ */
+export async function logOwnerDiagnostics(dev: AdbDevice, log: Logger): Promise<UserInfo[]> {
+  log("info", "Collecting device owner diagnostics");
+  const users = await readUsers(dev, log);
+  await sh(dev, log, "pm list features 2>&1 | grep -i -E 'device_admin|managed_users' || echo 'no device_admin feature'");
+  await sh(dev, log, "pm list packages 2>&1 | grep -i -E 'kgclient|knoxguard|kg\\.|payjoy|trustonic|nbu' || echo 'no lock agents'");
+  // knox.kg.state reads Completed once Knox Guard has released the device; a new device
+  // that has never been online can still be in an earlier state.
+  await sh(dev, log, "getprop 2>&1 | grep -i -E 'knox.kg|ro.boot.kg|knox.device_owner|ro.boot.warranty' | head -20");
+  await sh(dev, log, "dumpsys device_policy 2>&1 | head -40");
+  // adbd logs every shell command it runs, this one included; those lines are noise.
+  await sh(dev, log, "logcat -d -t 600 2>&1 | grep -v ' adbd ' | grep -i -E 'DevicePolicy|device.?owner|KnoxGuard' | tail -40");
+  return users;
 }
 
 export async function readFreeBytes(dev: AdbDevice, log: Logger): Promise<number | null> {
@@ -230,6 +262,10 @@ export async function setDeviceOwner(dev: AdbDevice, log: Logger, attempts = 5):
   const owners = await readOwners(dev, log);
   if (owners.deviceOwner === APP_PACKAGE) return;
   const known = findKnownError(last);
+  if (known && known.id !== "owner-refused") throw new InstallerError(known.id, last.trim());
+  // No reason given. A second user is the likeliest one the checks before could miss.
+  const users = await logOwnerDiagnostics(dev, log).catch(() => [] as UserInfo[]);
+  if (users.length > 1) throw new InstallerError("users", last.trim());
   throw new InstallerError(known?.id ?? "owner-failed", last.trim());
 }
 
