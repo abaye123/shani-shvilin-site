@@ -1,6 +1,6 @@
 [package]
 name = "shani-shvilin-installer"
-version = "1.0.0"
+version = "1.0.1"
 description = "Shani Shvilin PC installer"
 authors = ["abaye"]
 edition = "2021"

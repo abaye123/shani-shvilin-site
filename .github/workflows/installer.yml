@@ -1,16 +1,23 @@
-name: Build PC installer
+name: Build PC installer (check only)
 
-# Push a tag like installer-v1.0.1 (matching installer/src-tauri/tauri.conf.json "version")
-# to build the portable Windows exe and attach it to a GitHub release of this repository.
-# The Pages workflow then copies it to /downloads/ShaniShvilin-Installer.exe on the site.
+# Builds the portable Windows exe as a check that it still compiles, and keeps it as a
+# workflow artifact. It does NOT publish: every published exe is signed with the code
+# signing certificate, which lives on the release machine only, so a release built
+# here would ship unsigned. Releases are built, signed and published locally:
+#
+#   1. bump "version" in installer/src-tauri/tauri.conf.json and installer/package.json
+#   2. npm run build:exe -w shani-shvilin-installer
+#   3. signtool sign /sha1 <thumbprint> /fd sha256 /tr http://timestamp.digicert.com /td sha256 <exe>
+#   4. gh release create installer-v<version> with the signed exe and SHA256SUMS
+#   5. gh workflow run pages.yml --ref main
+#
+# Tag pushes no longer trigger this workflow: an action publishing on a tag would
+# replace the signed asset with an unsigned build of the same name.
 on:
-  push:
-    tags: ["installer-v*"]
   workflow_dispatch:
 
 permissions:
-  contents: write
-  actions: write
+  contents: read
 
 jobs:
   windows:
@@ -33,21 +40,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p out
-          cp installer/src-tauri/target/release/shani-shvilin-installer.exe out/ShaniShvilin-Installer-windows-x64.exe
-          sha256sum out/*.exe > out/SHA256SUMS
+          cp installer/src-tauri/target/release/shani-shvilin-installer.exe out/ShaniShvilin-Installer-windows-x64-unsigned.exe
       - uses: actions/upload-artifact@v4
         with:
-          name: installer-windows
+          name: installer-windows-unsigned
           path: out/*
-      - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/installer-v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: out/*
-          name: Installer ${{ github.ref_name }}
-      - name: Redeploy the site with the new installer
-        if: startsWith(github.ref, 'refs/tags/installer-v')
-        shell: bash
-        run: gh workflow run pages.yml --ref main
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
