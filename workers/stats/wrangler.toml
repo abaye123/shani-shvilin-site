@@ -1,0 +1,32 @@
+# Deploy: npx wrangler deploy (from this folder). See README.md for the first setup.
+name = "shani-shvilin-stats"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+# The site's own paths, unchanged. Filters (NetFree) approve this hostname and
+# these paths; the worker sits in front of them and moves nothing.
+routes = [
+  { pattern = "shanishvilin.abaye.co/apk/*", zone_name = "abaye.co" },
+  { pattern = "shanishvilin.abaye.co/downloads/*", zone_name = "abaye.co" },
+  { pattern = "shanishvilin.abaye.co/update/*", zone_name = "abaye.co" },
+  { pattern = "shanishvilin.abaye.co/api/stats*", zone_name = "abaye.co" },
+]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "shani-shvilin-stats"
+database_id = "REPLACE_WITH_DATABASE_ID"
+
+# Hourly: the GitHub download counts.
+[triggers]
+crons = ["23 * * * *"]
+
+[vars]
+RELEASES_REPO = "abaye123/shani-shvilin-releases"
+# Estimated GitHub downloads made by the site's own build, up to the cutover
+# (2026-11-10, 16 releases): 263 counted, about 87 by people. See worker.js.
+GITHUB_EXCLUDE = "176"
+GITHUB_CUTOVER_RELEASES = "16"
+# After the cutover the build fetches each ABI of a new release once.
+GITHUB_EXCLUDE_PER_RELEASE = "2"

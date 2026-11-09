@@ -1,0 +1,38 @@
+---
+/**
+ * The download count, as the site was built with it, then refreshed in the browser from
+ * /api/stats (the stats worker, workers/stats), so it is current between builds. Hidden
+ * when neither has a number.
+ */
+import { apkDownloads, formatDownloads } from "../lib/site-data";
+
+interface Props {
+  suffix?: string;
+  as?: "p" | "span";
+  class?: string;
+}
+const { suffix = "", as: Tag = "span", class: className = "" } = Astro.props;
+const text = formatDownloads(apkDownloads);
+---
+
+<Tag class={`muted small downloads ${className}`} data-download-count data-suffix={suffix} hidden={!text}>
+  {text ? `${text}${suffix}` : ""}
+</Tag>
+
+<script>
+  const nodes = document.querySelectorAll<HTMLElement>("[data-download-count]");
+  if (nodes.length) {
+    fetch("/api/stats", { cache: "no-cache" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { downloads?: number } | null) => {
+        const n = data?.downloads;
+        if (!n || n < 1) return;
+        const text = n === 1 ? "הורדה אחת" : `${n.toLocaleString("he-IL")} הורדות`;
+        for (const node of nodes) {
+          node.textContent = text + (node.dataset.suffix ?? "");
+          node.hidden = false;
+        }
+      })
+      .catch(() => {});
+  }
+</script>

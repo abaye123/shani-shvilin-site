@@ -60,30 +60,27 @@ export function readReleases(): ReleaseEntry[] {
   }
 }
 
-const RELEASES_REPO = process.env.RELEASES_REPO ?? "abaye123/shani-shvilin-releases";
+const SITE_URL = process.env.SITE_URL ?? "https://shanishvilin.abaye.co";
 
 /**
- * Total download count of every .apk asset across all releases, read from the GitHub API at
- * build time. Null when the API is unreachable or rate limited, so the count is simply omitted.
+ * The download count, as the stats worker in front of the live site counts it (workers/stats):
+ * downloads from the site and the PC installer, plus GitHub's count without the site's own
+ * build fetches. Read at build time so the page has a number without script; the page then
+ * refreshes it in the browser (components/DownloadCount.astro). Null when unreachable, so the
+ * count is simply omitted.
+ *
+ * It used to be GitHub's raw count, which a build four times a day had inflated to three
+ * times the real number, and which missed every download from the site.
  */
 async function fetchApkDownloads(): Promise<number | null> {
-  const headers: Record<string, string> = {
-    Accept: "application/vnd.github+json",
-    "User-Agent": "shani-shvilin-site-build",
-  };
-  if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   try {
-    let total = 0;
-    for (let page = 1; ; page++) {
-      const url = `https://api.github.com/repos/${RELEASES_REPO}/releases?per_page=100&page=${page}`;
-      const res = await fetch(url, { headers, signal: AbortSignal.timeout(10_000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const list = (await res.json()) as { assets?: { name: string; download_count: number }[] }[];
-      for (const r of list) {
-        for (const a of r.assets ?? []) if (a.name.endsWith(".apk")) total += a.download_count ?? 0;
-      }
-      if (list.length < 100) return total;
-    }
+    const res = await fetch(`${SITE_URL}/api/stats`, {
+      headers: { "User-Agent": "shani-shvilin-site-build" },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const n = ((await res.json()) as { downloads?: unknown }).downloads;
+    return typeof n === "number" && n > 0 ? n : null;
   } catch (e) {
     console.warn(`download count unavailable: ${(e as Error).message}`);
     return null;

@@ -24,6 +24,7 @@ const TOKEN = process.env.GITHUB_TOKEN ?? "";
 const ABIS = ["arm64-v8a", "armeabi-v7a"];
 const PUBLIC = "public";
 const INSTALLER_PATH = "/downloads/ShaniShvilin-Installer.exe";
+const SITE_URL = process.env.SITE_URL ?? "https://shanishvilin.abaye.co";
 
 const problems = [];
 const warn = (msg) => {
@@ -82,6 +83,26 @@ async function listReleases(repo) {
   return list.filter((r) => !r.draft).sort((a, b) => Date.parse(b.published_at) - Date.parse(a.published_at));
 }
 
+/**
+ * The APK as the live site already serves it, when its hash is the expected one; null
+ * otherwise. Every download from GitHub adds to the release's download count, which the
+ * site shows as its download number, and a build runs four times a day: fetching unchanged
+ * files from GitHub on every run had made most of that number builds. Now GitHub is asked
+ * only for a release the site does not serve yet. The stats worker in front of the site
+ * recognises this script's User-Agent and does not count these requests either.
+ */
+async function fromLiveSite(path, expected) {
+  if (!expected) return null;
+  try {
+    const res = await fetch(`${SITE_URL}${path}`, { headers: headers(false), redirect: "follow" });
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    return sha256(buf) === expected.toLowerCase() ? buf : null;
+  } catch {
+    return null;
+  }
+}
+
 async function downloadAsset(asset) {
   const res = await get(asset.browser_download_url);
   return Buffer.from(await res.arrayBuffer());
@@ -112,14 +133,16 @@ async function fetchChannelApks(release, channel, versionInfo) {
       warn(`${release.tag_name}: no ${abi} APK`);
       continue;
     }
-    const buf = await downloadAsset(asset);
-    const hex = sha256(buf);
     const expected = sums.get(asset.name) ?? (info?.tag === release.tag_name ? info?.apks?.[abi]?.sha256 : undefined);
+    const sitePath = `/apk/${channel}/ShaniShvilin-${abi}.apk`;
+    const cached = await fromLiveSite(sitePath, expected);
+    const buf = cached ?? (await downloadAsset(asset));
+    const hex = sha256(buf);
     if (expected && expected.toLowerCase() !== hex) throw new Error(`${asset.name}: SHA-256 mismatch (${hex} != ${expected})`);
     const out = join(PUBLIC, "apk", channel, `ShaniShvilin-${abi}.apk`);
     await writeOut(out, buf);
     files[abi] = { path: `/apk/${channel}/ShaniShvilin-${abi}.apk`, sha256: hex, size: buf.length };
-    log(`${channel}/${abi}: ${asset.name} (${buf.length} bytes)`);
+    log(`${channel}/${abi}: ${asset.name} (${buf.length} bytes, ${cached ? "unchanged on the site" : "from GitHub"})`);
   }
   return files;
 }
