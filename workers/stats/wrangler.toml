@@ -16,7 +16,7 @@ routes = [
 [[d1_databases]]
 binding = "DB"
 database_name = "shani-shvilin-stats"
-database_id = "REPLACE_WITH_DATABASE_ID"
+database_id = "5a599ca9-252c-49ce-a7aa-62a2e08fa10e"
 
 # Hourly: the GitHub download counts.
 [triggers]
