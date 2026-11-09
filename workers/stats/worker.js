@@ -50,12 +50,10 @@ const SOURCES = new Set(["update", "installer"]);
 // build, which fetches the published files to compare them.
 const NOT_PEOPLE_RE = /bot|crawl|spider|slurp|preview|facebookexternalhit|shani-shvilin-site-build/i;
 
-const PUBLIC_CACHE_SECONDS = 300;
-
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.pathname === "/api/stats") return publicStats(request, env, ctx);
+    if (url.pathname === "/api/stats") return publicStats(env);
     if (url.pathname === "/api/stats/full") return fullStats(request, env, url);
 
     ctx.passThroughOnException();
@@ -225,26 +223,25 @@ async function github(env) {
  * installer, plus what people downloaded from GitHub. Updates are left out,
  * so the number says how many times the app was fetched to be installed.
  */
-async function publicStats(request, env, ctx) {
-  const cache = caches.default;
-  const key = new Request(new URL("/api/stats", request.url).toString());
-  const hit = await cache.match(key);
-  if (hit) return hit;
-
+/**
+ * Not cached, here or downstream: the zone's browser cache TTL turned a five minute
+ * max-age into three hours, which kept a count of 0 on the site long after the first
+ * numbers came in. One small query per page view costs nothing at this scale, and
+ * no-store is the one directive that setting leaves alone.
+ */
+async function publicStats(env) {
   const row = await env.DB.prepare(
     `SELECT COALESCE(SUM(count), 0) AS n FROM downloads WHERE kind = 'apk' AND source IN ('site', 'installer')`,
   ).first();
   const gh = await github(env);
   const body = JSON.stringify({ downloads: Number(row.n) + gh.people });
-  const response = new Response(body, {
+  return new Response(body, {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": `public, max-age=${PUBLIC_CACHE_SECONDS}`,
+      "Cache-Control": "no-store",
       "Access-Control-Allow-Origin": "*",
     },
   });
-  ctx.waitUntil(cache.put(key, response.clone()));
-  return response;
 }
 
 async function fullStats(request, env, url) {
