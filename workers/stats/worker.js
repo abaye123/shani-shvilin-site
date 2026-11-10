@@ -136,9 +136,11 @@ async function record(env, event, request) {
          checks = checks + 1`,
     ).bind(key, now.toISOString(), version, event.channel, Number.isFinite(sdk) ? sdk : null).run();
   } else {
-    // Versions before 0.2.16 send no id, and check only from the update
-    // screen. Counted once per address and user agent per day, which is the
-    // best that can be done without one; the address itself is not kept.
+    // Versions before 0.2.16 send no id. They check twice a day like the
+    // newer ones, so they are counted once per address and user agent per
+    // day, which is the best that can be done without one; the address
+    // itself is not kept. A device whose address changes during the day
+    // counts more than once.
     const ip = headers.get("cf-connecting-ip") ?? "";
     const key = await hash(env, `legacy:${day}:${ip}:${headers.get("user-agent") ?? ""}`);
     await env.DB.prepare(`INSERT OR IGNORE INTO legacy_checks (day, key) VALUES (?1, ?2)`).bind(day, key).run();
@@ -359,7 +361,7 @@ ${tile("פעילים, 7 ימים", d.devices.active["7d"])}
 ${tile("פעילים, יום אחרון", d.devices.active["1d"])}
 ${tile("הורדות שמוצגות באתר", d.shownOnSite)}
 </div>
-<p class=muted>מכשיר פעיל: בדק עדכונים בתקופה הזו. נספרים רק מכשירים עם גרסה 0.2.16 ומעלה, שבודקות עדכונים פעם ביום. התקנה מחדש או איפוס נספרים כמכשיר חדש, והמכשיר הקודם יוצא מהספירה אחרי 30 יום.</p>
+<p class=muted>מכשיר פעיל: בדק עדכונים בתקופה הזו. נספרים כאן מכשירים עם גרסה 0.2.16 ומעלה, שבודקות עדכונים פעמיים ביום ושולחות מזהה התקנה. התקנה מחדש או איפוס נספרים כמכשיר חדש, והמכשיר הקודם יוצא מהספירה אחרי 30 יום.</p>
 ${table("לפי גרסה (30 יום)", d.devices.byVersion, [["version", "גרסה"], ["devices", "מכשירים"]])}
 ${table("לפי ערוץ (30 יום)", d.devices.byChannel, [["channel", "ערוץ"], ["devices", "מכשירים"]])}
 ${table("לפי גרסת אנדרואיד (30 יום)", d.devices.bySdk, [["sdk", "SDK"], ["devices", "מכשירים"]])}

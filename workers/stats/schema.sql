@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS devices (
 CREATE INDEX IF NOT EXISTS devices_last_seen ON devices (last_seen);
 CREATE INDEX IF NOT EXISTS devices_first_seen ON devices (first_seen);
 
--- Update checks per day, background (daily worker) or manual (the button).
+-- Update checks per day, background (the twice-daily self update) or manual (the button).
 CREATE TABLE IF NOT EXISTS checks (
   day TEXT NOT NULL,
   channel TEXT NOT NULL,
