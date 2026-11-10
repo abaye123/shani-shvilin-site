@@ -214,7 +214,10 @@ async function github(env) {
   const exclude = Number(env.GITHUB_EXCLUDE ?? 0)
     + Math.max(0, releases - Number(env.GITHUB_CUTOVER_RELEASES ?? releases))
       * Number(env.GITHUB_EXCLUDE_PER_RELEASE ?? 0);
-  return { total, releases, exclude, people: Math.max(0, total - exclude), at: meta.github_at ?? null };
+  const people = Math.max(0, total - exclude);
+  // What the site shows: GitHub's whole count unless PUBLIC_INCLUDES_BUILDS is "0".
+  const shown = env.PUBLIC_INCLUDES_BUILDS === "0" ? people : total;
+  return { total, releases, exclude, people, shown, at: meta.github_at ?? null };
 }
 
 // ---------------------------------------------------------------------------
@@ -236,7 +239,7 @@ async function publicStats(env) {
     `SELECT COALESCE(SUM(count), 0) AS n FROM downloads WHERE kind = 'apk' AND source IN ('site', 'installer')`,
   ).first();
   const gh = await github(env);
-  const body = JSON.stringify({ downloads: Number(row.n) + gh.people });
+  const body = JSON.stringify({ downloads: Number(row.n) + gh.shown });
   return new Response(body, {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
@@ -288,7 +291,8 @@ async function collect(env) {
 
   return {
     generatedAt: new Date().toISOString(),
-    shownOnSite: site + gh.people,
+    shownOnSite: site + gh.shown,
+    peopleEstimate: site + gh.people,
     devices: {
       active,
       ever: Number((await one(`SELECT COUNT(*) AS n FROM devices`)).n),
@@ -360,6 +364,7 @@ ${tile("מכשירים פעילים, 30 יום", d.devices.active["30d"])}
 ${tile("פעילים, 7 ימים", d.devices.active["7d"])}
 ${tile("פעילים, יום אחרון", d.devices.active["1d"])}
 ${tile("הורדות שמוצגות באתר", d.shownOnSite)}
+${tile("מתוכן אנשים, הערכה", d.peopleEstimate)}
 </div>
 <p class=muted>מכשיר פעיל: בדק עדכונים בתקופה הזו. נספרים כאן מכשירים עם גרסה 0.2.16 ומעלה, שבודקות עדכונים פעמיים ביום ושולחות מזהה התקנה. התקנה מחדש או איפוס נספרים כמכשיר חדש, והמכשיר הקודם יוצא מהספירה אחרי 30 יום.</p>
 ${table("לפי גרסה (30 יום)", d.devices.byVersion, [["version", "גרסה"], ["devices", "מכשירים"]])}
@@ -371,7 +376,7 @@ ${table("בדיקות עדכון לפי יום", d.checksPerDay, [["day", "יו�
 ${table("הורדות מהאתר, מאז שהמונה פועל", named(d.downloads.bySource), [["kind", "קובץ"], ["source", "מקור"], ["count", "הורדות"]])}
 ${table("הורדות לפי יום", named(d.downloads.perDay), [["day", "יום"], ["kind", "קובץ"], ["source", "מקור"], ["count", "הורדות"]])}
 <section><h2>GitHub</h2>
-<p>סך הכול ${esc(gh.total)} הורדות APK ב-${esc(gh.releases)} גרסאות. מתוכן ${esc(gh.exclude)} הן הערכה של הורדות בזמן בניית האתר, ולכן נספרות ${esc(gh.people)}.</p>
+<p>סך הכול ${esc(gh.total)} הורדות APK ב-${esc(gh.releases)} גרסאות, וכולן נכללות במספר שבאתר. לפי ההערכה, ${esc(gh.exclude)} מהן הן הורדות בזמן בניית האתר, ו-${esc(gh.people)} הן של אנשים.</p>
 <p class=muted>נקרא מ-GitHub ${esc(gh.at ? gh.at.replace("T", " ").slice(0, 16) + " UTC" : "עדיין לא")}</p>
 </section>
 </main></body></html>`;

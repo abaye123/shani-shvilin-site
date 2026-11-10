@@ -30,3 +30,7 @@ GITHUB_EXCLUDE = "176"
 GITHUB_CUTOVER_RELEASES = "16"
 # After the cutover the build fetches each ABI of a new release once.
 GITHUB_EXCLUDE_PER_RELEASE = "2"
+# The public count takes GitHub's whole count, build fetches included, by
+# choice; the estimate above is what the private page subtracts to show
+# people. "0" makes the public count use that estimate too.
+PUBLIC_INCLUDES_BUILDS = "1"
