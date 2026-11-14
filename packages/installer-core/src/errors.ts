@@ -101,6 +101,23 @@ export const KNOWN_ERRORS: KnownError[] = [
     ],
   },
   {
+    id: "knox-guard",
+    title: "נעילת המימון של סמסונג (Knox Guard) פעילה במכשיר",
+    message: "Knox Guard is an active device admin and the lock is not released",
+    // Never matched from Android's output: found by the diagnostics after a refusal.
+    match: [],
+    explanation:
+      "במכשיר פועלת נעילת היצרן של סמסונג, שמגיעה במכשירים שנמכרים בתשלומים או דרך חברות סלולר. " +
+      "כל עוד היא פעילה, אנדרואיד לא מאפשר להגדיר מנהל מכשיר אחר. במכשיר שאין עליו חוב, הנעילה משתחררת " +
+      "לבד אחרי שהמכשיר מתחבר לאינטרנט ומתעדכן מול סמסונג.",
+    fix: [
+      "מחברים את המכשיר ל-Wi-Fi, משאירים אותו מחובר 10 דקות, ולוחצים \"ניסיון חוזר\".",
+      "אם זה לא עוזר: מבצעים איפוס יצרן, ובהגדרה הראשונית מתחברים ל-Wi-Fi ומחכים שהמכשיר יסיים לבדוק עדכונים. אחר כך מדלגים על חשבון Google ומריצים את ההתקנה שוב.",
+      "אם המכשיר נקנה בתשלומים שעוד לא הסתיימו, הנעילה תשתחרר רק בסיום התשלומים. אפשר לברר מול המוכר או חברת הסלולר.",
+      "אם זה חוזר, מעתיקים את היומן ושולחים אלינו: shanishvilin@abaye.co.",
+    ],
+  },
+  {
     id: "owner-refused",
     title: "המכשיר סירב להגדיר מנהל מכשיר, בלי לציין סיבה",
     message: "java.lang.RuntimeException: Can't set package ComponentInfo{...AdminReceiver} as device owner.",

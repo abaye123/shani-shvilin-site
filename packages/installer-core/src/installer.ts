@@ -15,6 +15,7 @@ import { InstallerError, findKnownError } from "./errors.js";
 import { inspectApk, looksLikeHtml, looksLikeZip, type ApkSummary } from "./apk.js";
 import {
   hasPackage,
+  knoxGuardHolds,
   parseAbiList,
   parseAccounts,
   parseDfAvailable,
@@ -107,18 +108,26 @@ export async function readUsers(dev: AdbDevice, log: Logger): Promise<UserInfo[]
  * lock (Knox Guard) among them. Everything here only reads, and the answer goes to the
  * log, so the next report of this carries the cause.
  */
-export async function logOwnerDiagnostics(dev: AdbDevice, log: Logger): Promise<UserInfo[]> {
+export interface OwnerDiagnostics {
+  users: UserInfo[];
+  /** Samsung's financing lock still holds the device; see knoxGuardHolds. */
+  knoxGuard: boolean;
+}
+
+export async function logOwnerDiagnostics(dev: AdbDevice, log: Logger): Promise<OwnerDiagnostics> {
   log("info", "Collecting device owner diagnostics");
   const users = await readUsers(dev, log);
   await sh(dev, log, "pm list features 2>&1 | grep -i -E 'device_admin|managed_users' || echo 'no device_admin feature'");
   await sh(dev, log, "pm list packages 2>&1 | grep -i -E 'kgclient|knoxguard|kg\\.|payjoy|trustonic|nbu' || echo 'no lock agents'");
   // knox.kg.state reads Completed once Knox Guard has released the device; a new device
   // that has never been online can still be in an earlier state.
-  await sh(dev, log, "getprop 2>&1 | grep -i -E 'knox.kg|ro.boot.kg|knox.device_owner|ro.boot.warranty' | head -20");
-  await sh(dev, log, "dumpsys device_policy 2>&1 | head -40");
+  const props = await sh(dev, log, "getprop 2>&1 | grep -i -E 'knox.kg|ro.boot.kg|knox.device_owner|ro.boot.warranty' | head -20");
+  const policy = await sh(dev, log, "dumpsys device_policy 2>&1 | head -40");
   // adbd logs every shell command it runs, this one included; those lines are noise.
   await sh(dev, log, "logcat -d -t 600 2>&1 | grep -v ' adbd ' | grep -i -E 'DevicePolicy|device.?owner|KnoxGuard' | tail -40");
-  return users;
+  const knoxGuard = knoxGuardHolds(props, policy);
+  if (knoxGuard) log("warn", "Knox Guard holds this device: its client is an active admin and the lock is not released");
+  return { users, knoxGuard };
 }
 
 export async function readFreeBytes(dev: AdbDevice, log: Logger): Promise<number | null> {
@@ -264,8 +273,9 @@ export async function setDeviceOwner(dev: AdbDevice, log: Logger, attempts = 5):
   const known = findKnownError(last);
   if (known && known.id !== "owner-refused") throw new InstallerError(known.id, last.trim());
   // No reason given. A second user is the likeliest one the checks before could miss.
-  const users = await logOwnerDiagnostics(dev, log).catch(() => [] as UserInfo[]);
-  if (users.length > 1) throw new InstallerError("users", last.trim());
+  const found = await logOwnerDiagnostics(dev, log).catch(() => ({ users: [] as UserInfo[], knoxGuard: false }));
+  if (found.users.length > 1) throw new InstallerError("users", last.trim());
+  if (found.knoxGuard) throw new InstallerError("knox-guard", last.trim());
   throw new InstallerError(known?.id ?? "owner-failed", last.trim());
 }
 

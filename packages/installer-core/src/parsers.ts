@@ -165,3 +165,16 @@ export function hasPackage(listOutput: string, pkg: string): boolean {
 export function parseAbiList(text: string): string[] {
   return text.trim().split(/[,\s]+/).filter(Boolean);
 }
+
+/**
+ * Whether Samsung's financing lock (Knox Guard) still holds the device, from the output of
+ * `getprop` and `dumpsys device_policy`. While it holds, its client is an active device
+ * admin and Android refuses any device owner without saying why. Released devices read
+ * knox.kg.state Completed, and the client is no longer an admin.
+ */
+export function knoxGuardHolds(props: string, devicePolicy: string): boolean {
+  const adminActive = /com\.samsung\.android\.kgclient\/[^\s]*DeviceAdminReceiver/i.test(devicePolicy);
+  const state = props.match(/\[knox\.kg\.state\]:\s*\[([^\]]*)\]/i)?.[1]?.trim() ?? "";
+  const released = /^completed$/i.test(state);
+  return adminActive && !released;
+}
