@@ -74,11 +74,16 @@ const v8 = rel ? { href: apkPath("stable", "arm64-v8a"), size: rel.info.apks["ar
           את 6 הספרות <strong>בהתראה של שני שבילין</strong>, בלי לסגור את חלון הצימוד. מסירים קודם את כל החשבונות מהמכשיר.
         </li>
         <li>
-          <strong>מחשב נייד ברכב.</strong> מחברים את המכשיר והמחשב לאותה רשת Wi-Fi, מצמידים עם <span class="mono ltr">adb pair</span>, מתחברים עם
-          <span class="mono ltr">adb connect</span> וממשיכים לפי <a href="/install/manual">ההתקנה הידנית</a>. כך לא צריך כבל ולא צריך וילון התראות.
+          <strong>מחשב נייד ברכב.</strong> מחברים את המכשיר והמחשב לאותה רשת Wi-Fi, ובשלב "חיבור" של
+          <a href="/install/pc">תוכנת ההתקנה</a> בוחרים "חיבור ב-Wi-Fi". בפקודות: <span class="mono ltr">adb pair</span> ואחר כך
+          <span class="mono ltr">adb connect</span>, לפי <a href="/install/manual#wifi">ההוראות המלאות</a>. כך לא צריך כבל ולא צריך וילון התראות.
         </li>
       </ul>
       <p>מכשיר עם SIM בלבד? ניפוי באגים אלחוטי דורש Wi-Fi, אז מחברים אותו לנקודה חמה של טלפון.</p>
+      <p>
+        <strong>קופסת AI Box</strong> (למשל VicoVation AI BOX GT5S): בהרבה קופסאות אין וילון התראות, אז ההתראה עם הקוד לא נראית,
+        והמחשב מזהה את הקופסה בכבל כמכשיר Apple. הדרך שעובדת היא המחשב הנייד ב-Wi-Fi, כמו שמוסבר למעלה.
+      </p>
     </section>
 
     <section class="card">

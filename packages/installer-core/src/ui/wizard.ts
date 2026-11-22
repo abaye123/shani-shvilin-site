@@ -28,6 +28,7 @@ import {
   type LogLevel,
 } from "../installer.js";
 import { GENERIC_PREPARE, OEM_NOTES } from "../oem.js";
+import { normalizeAddress, normalizePairingCode } from "../wireless.js";
 import { accountTypeName, maskAccount, type AccountInfo, type PackageInfo, type UserInfo } from "../parsers.js";
 import { TERMS, TERMS_VERSION } from "../terms.js";
 import { fingerprint, formatBytes, pickAbi, resolveChannel, type Channel, type VersionFile } from "../version.js";
@@ -92,6 +93,11 @@ export class Wizard {
   private connectStatus: ConnectStatus | null = null;
   private connectError: ErrorDescription | null = null;
   private connectAbort: AbortController | null = null;
+  /** The Wi-Fi form on the connect step, kept across renders. */
+  private wifiOpen = false;
+  private wifiPair = "";
+  private wifiCode = "";
+  private wifiAddress = "";
   private versionFile: VersionFile | null = null;
   private channel: Channel = "stable";
   private advancedOpen = false;
@@ -415,11 +421,99 @@ export class Wizard {
       ),
       status,
       this.connectError ? this.errorBox(this.connectError) : null,
+      this.o.backend.connectWireless ? this.wifiSection() : null,
       h("div", { class: "sw-nav" }, connectBtn, this.busy ? h("button", { type: "button", class: "sw-btn sw-btn-ghost", onclick: () => this.connectAbort?.abort() }, "ביטול") : h("button", { type: "button", class: "sw-btn sw-btn-ghost", onclick: () => this.go("prepare") }, "חזרה")),
     );
   }
 
+  /**
+   * For a unit the computer does not see over USB: a car "AI Box", whose USB
+   * port is in CarPlay mode and shows up as an Apple device. Pairing with the
+   * code from "pair with code", then connecting to the address on the main
+   * wireless debugging screen, which has a different port.
+   */
+  private wifiSection(): HTMLElement {
+    const field = (label: string, hint: string, value: string, placeholder: string, onInput: (v: string) => void) =>
+      h(
+        "label",
+        { class: "sw-field" },
+        h("span", null, label),
+        h("input", {
+          type: "text",
+          dir: "ltr",
+          inputmode: "numeric",
+          value,
+          placeholder,
+          disabled: this.busy,
+          oninput: ((e: Event) => onInput((e.target as HTMLInputElement).value)) as EventListener,
+        }),
+        h("small", { class: "sw-muted" }, hint),
+      );
+    const body = h(
+      "div",
+      null,
+      h(
+        "ol",
+        { class: "sw-list" },
+        h("li", null, "מחברים את המחשב ואת המכשיר לאותה רשת Wi-Fi (או לנקודה חמה של טלפון)."),
+        h("li", null, "במכשיר: אפשרויות מפתחים > \"ניפוי באגים אלחוטי\" > מפעילים > \"צימוד מכשיר באמצעות קוד צימוד\". משאירים את החלון פתוח."),
+        h("li", null, "מקלידים כאן את הכתובת ואת הקוד שבחלון הצימוד."),
+        h("li", null, "את הכתובת לחיבור לוקחים מהמסך הראשי של \"ניפוי באגים אלחוטי\", תחת \"כתובת IP ויציאה\". הפורט שם שונה מהפורט שבחלון הצימוד."),
+      ),
+      field("כתובת בחלון הצימוד", "למשל 192.168.1.100:37123. אם המחשב כבר צומד בעבר, אפשר להשאיר ריק.", this.wifiPair, "192.168.1.100:37123", (v) => (this.wifiPair = v)),
+      field("קוד צימוד", "6 הספרות שבחלון הצימוד.", this.wifiCode, "123456", (v) => (this.wifiCode = v)),
+      field("כתובת לחיבור", "מהמסך הראשי של ניפוי באגים אלחוטי, למשל 192.168.1.100:39407.", this.wifiAddress, "192.168.1.100:39407", (v) => (this.wifiAddress = v)),
+      h(
+        "div",
+        { class: "sw-nav" },
+        h("button", { type: "button", class: "sw-btn sw-btn-primary", disabled: this.busy, onclick: () => void this.connectWifi() }, "חיבור ב-Wi-Fi"),
+      ),
+    );
+    const details = h(
+      "details",
+      { class: "sw-note sw-note-soft", open: this.wifiOpen },
+      h("summary", null, "המחשב לא מזהה את המכשיר בכבל, או מזהה אותו כמכשיר Apple? חיבור ב-Wi-Fi"),
+      body,
+    ) as HTMLDetailsElement;
+    details.addEventListener("toggle", () => (this.wifiOpen = details.open));
+    return details;
+  }
+
+  private async connectWifi(): Promise<void> {
+    if (this.busy || !this.o.backend.connectWireless) return;
+    const address = normalizeAddress(this.wifiAddress);
+    const pairAddress = this.wifiPair.trim() ? normalizeAddress(this.wifiPair) : null;
+    const pairingCode = this.wifiCode.trim() ? normalizePairingCode(this.wifiCode) : null;
+    const problem =
+      !address
+        ? "כתובת החיבור צריכה להיות בצורה 192.168.1.100:39407."
+        : this.wifiPair.trim() && !pairAddress
+          ? "כתובת חלון הצימוד צריכה להיות בצורה 192.168.1.100:37123."
+          : pairAddress && !pairingCode
+            ? "קוד הצימוד הוא 6 ספרות."
+            : null;
+    if (problem) {
+      this.connectError = { id: "wireless-input", title: "חסר פרט לחיבור", explanation: problem, fix: [] };
+      this.render();
+      return;
+    }
+    await this.runConnect((signal, onStatus) =>
+      this.o.backend.connectWireless!({
+        signal,
+        onStatus,
+        address: address!,
+        pairAddress: pairAddress ?? undefined,
+        pairingCode: pairingCode ?? undefined,
+      }),
+    );
+  }
+
   private async connect(): Promise<void> {
+    await this.runConnect((signal, onStatus) => this.o.backend.connect({ signal, onStatus }));
+  }
+
+  /** USB or Wi-Fi, the same from here: read the device, then on to the checks. */
+  private async runConnect(open: (signal: AbortSignal, onStatus: (st: ConnectStatus) => void) => Promise<AdbDevice>): Promise<void> {
     if (this.busy) return;
     this.connectError = null;
     this.busy = true;
@@ -431,13 +525,10 @@ export class Wizard {
         await this.device.close().catch(() => undefined);
         this.device = null;
       }
-      const dev = await this.o.backend.connect({
-        signal: this.connectAbort.signal,
-        onStatus: (st) => {
-          this.connectStatus = st;
-          if (st.kind !== "preparing") this.log("info", `connect: ${st.kind}`);
-          this.render();
-        },
+      const dev = await open(this.connectAbort.signal, (st) => {
+        this.connectStatus = st;
+        if (st.kind !== "preparing") this.log("info", `connect: ${st.kind}`);
+        this.render();
       });
       this.device = dev;
       this.log("info", `Connected to ${dev.serial}`);

@@ -6,6 +6,7 @@ export * from "./oem.js";
 export * from "./parsers.js";
 export * from "./apk.js";
 export * from "./backend.js";
+export * from "./wireless.js";
 export * from "./installer.js";
 export { mountWizard, Wizard, type WizardOptions } from "./ui/wizard.js";
 export * from "./qr.js";

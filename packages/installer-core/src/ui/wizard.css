@@ -484,3 +484,24 @@
   overflow: hidden;
   clip: rect(0 0 0 0);
 }
+
+/* Text fields, as on the connect step's Wi-Fi form. */
+.sw-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 10px 0;
+}
+.sw-field input {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+details.sw-note > summary {
+  cursor: pointer;
+  font-weight: 600;
+}

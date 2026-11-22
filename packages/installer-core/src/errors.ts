@@ -19,6 +19,47 @@ export interface KnownError {
 
 export const KNOWN_ERRORS: KnownError[] = [
   {
+    id: "wireless-same-port",
+    title: "הוקלדה הכתובת של חלון הצימוד במקום הכתובת הראשית",
+    message: "adb connect לכתובת של חלון הצימוד",
+    match: [/wireless-same-port/],
+    explanation:
+      "במכשיר מוצגות שתי כתובות עם אותו IP ופורט שונה: אחת בחלון \"צימוד מכשיר באמצעות קוד צימוד\", " +
+      "ואחת במסך הראשי של \"ניפוי באגים אלחוטי\" (תחת \"כתובת IP ויציאה\"). הצימוד נעשה לראשונה, החיבור לשנייה.",
+    fix: [
+      "סוגרים את חלון הצימוד במכשיר וחוזרים למסך הראשי של \"ניפוי באגים אלחוטי\".",
+      "מעתיקים את הכתובת שמופיעה שם, עם הפורט שלה, לשדה \"כתובת לחיבור\".",
+    ],
+  },
+  {
+    id: "wireless-pair-failed",
+    title: "הצימוד ב-Wi-Fi נכשל",
+    message: "Failed: Wrong password or connection was dropped",
+    match: [/wireless-pair-failed/, /Wrong password or connection was dropped/i],
+    explanation:
+      "המחשב לא הצליח להצטמד למכשיר. הסיבות הנפוצות: קוד צימוד שגוי, חלון הצימוד נסגר לפני הלחיצה, " +
+      "או שהמחשב והמכשיר לא באותה רשת Wi-Fi.",
+    fix: [
+      "בודקים שהמחשב והמכשיר מחוברים לאותה רשת Wi-Fi (או לאותה נקודה חמה).",
+      "פותחים שוב במכשיר \"צימוד מכשיר באמצעות קוד צימוד\" ומשאירים את החלון פתוח.",
+      "מקלידים את הכתובת ואת הקוד החדשים שמופיעים בחלון. כל פתיחה של החלון יוצרת קוד ופורט חדשים.",
+    ],
+    commands: ["adb pair 192.168.1.100:37123 123456"],
+  },
+  {
+    id: "wireless-connect-failed",
+    title: "החיבור ב-Wi-Fi נכשל",
+    message: "failed to connect to 192.168.1.100:39407",
+    match: [/wireless-connect-failed/, /failed to connect to \d+\.\d+\.\d+\.\d+/i],
+    explanation:
+      "הצימוד עבר אבל החיבור לא. בדרך כלל הוקלדה כתובת לא נכונה, או ש\"ניפוי באגים אלחוטי\" כבה.",
+    fix: [
+      "במכשיר, במסך הראשי של \"ניפוי באגים אלחוטי\", בודקים שהמתג דלוק ושהכתובת תחת \"כתובת IP ויציאה\" זהה למה שהוקלד.",
+      "אם המכשיר עבר רשת או כבה, הכתובת משתנה: מעתיקים את החדשה.",
+    ],
+    commands: ["adb connect 192.168.1.100:39407", "adb devices"],
+  },
+  {
     id: "update-incompatible",
     title: "גרסה אחרת של האפליקציה כבר מותקנת",
     message: "INSTALL_FAILED_UPDATE_INCOMPATIBLE",

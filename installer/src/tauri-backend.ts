@@ -4,7 +4,17 @@
  */
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { InstallerError, type AdbBackend, type AdbDevice, type ConnectOptions, type Fetcher } from "@shani/installer-core";
+import {
+  InstallerError,
+  connectOutcome,
+  isPairingAddressReused,
+  pairOutcome,
+  type AdbBackend,
+  type AdbDevice,
+  type ConnectOptions,
+  type Fetcher,
+  type WirelessConnectOptions,
+} from "@shani/installer-core";
 
 interface AdbOutput {
   code: number;
@@ -104,6 +114,46 @@ export class AdbExeBackend implements AdbBackend {
       signal.removeEventListener("abort", onAbort);
       unlisten();
     }
+  }
+
+  /**
+   * Over Wi-Fi: `adb pair` with the dialog's code, then `adb connect` to the
+   * main screen's address, then wait for that serial to report "device". The
+   * serial is the address, so a USB device left plugged in does not get in the
+   * way the way it does for [connect].
+   */
+  async connectWireless({ onStatus, signal, pairAddress, pairingCode, address }: WirelessConnectOptions): Promise<AdbDevice> {
+    await this.ensureTools(onStatus, signal);
+    onStatus({ kind: "preparing", message: "מפעילים את כלי החיבור..." });
+    await adb(["start-server"]);
+
+    if (isPairingAddressReused(pairAddress ?? null, address)) throw new InstallerError("wireless-same-port");
+
+    if (pairAddress && pairingCode) {
+      onStatus({ kind: "preparing", message: "מצמידים את המחשב למכשיר..." });
+      const out = await adb(["pair", pairAddress, pairingCode]);
+      const text = out.stdout + out.stderr;
+      if (pairOutcome(text) !== "paired") throw new InstallerError("wireless-pair-failed", "wireless-pair-failed", text.trim());
+    }
+
+    onStatus({ kind: "preparing", message: "מתחברים למכשיר ב-Wi-Fi..." });
+    const out = await adb(["connect", address]);
+    const text = out.stdout + out.stderr;
+    if (connectOutcome(text) !== "connected") throw new InstallerError("wireless-connect-failed", "wireless-connect-failed", text.trim());
+
+    // The device may ask to allow this computer, as over USB, before it answers.
+    onStatus({ kind: "waiting-device" });
+    for (let i = 0; i < 120; i++) {
+      if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+      const state = parseDevices((await adb(["devices"])).stdout).find((d) => d.serial === address)?.state;
+      if (state === "device") {
+        onStatus({ kind: "connected", serial: address });
+        return new AdbExeDevice(address);
+      }
+      if (state === "unauthorized" || state === "authorizing") onStatus({ kind: "authorize" });
+      await sleep(1000, signal);
+    }
+    throw new InstallerError("wireless-connect-failed", "wireless-connect-failed", `${address} did not come online`);
   }
 
   async connect({ onStatus, signal }: ConnectOptions): Promise<AdbDevice> {

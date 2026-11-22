@@ -33,6 +33,21 @@ export interface AdbBackend {
    * since it opens the browser's device chooser.
    */
   connect(options: ConnectOptions): Promise<AdbDevice>;
+  /**
+   * Connects over Wi-Fi instead of USB: pairs with the code from the device's
+   * "pair with code" dialog when one is given, then connects to [address], the
+   * address on the main wireless debugging screen. Only the PC installer has it:
+   * a browser cannot open a network socket to the device.
+   */
+  connectWireless?(options: WirelessConnectOptions): Promise<AdbDevice>;
+}
+
+export interface WirelessConnectOptions extends ConnectOptions {
+  /** The pairing dialog's address, ip:port. Omitted when the computer is already paired. */
+  pairAddress?: string;
+  pairingCode?: string;
+  /** The main wireless debugging screen's address, ip:port. */
+  address: string;
 }
 
 /** HTTP GET used to fetch version.json and APKs. */
